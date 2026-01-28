@@ -16,7 +16,7 @@ struct RecordView: View {
                 Color.black.ignoresSafeArea()
                 
                 // Floating particles
-                ParticleView()
+                ParticleView(amplitude: voiceRecorder.currentAmplitude)
                     .ignoresSafeArea()
                 
                 if voiceRecorder.isRecording {
