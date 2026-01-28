@@ -1,0 +1,90 @@
+import SwiftUI
+
+struct Particle: Identifiable {
+    let id = UUID()
+    var x: CGFloat
+    var y: CGFloat
+    var size: CGFloat
+    var opacity: Double
+    var velocityX: CGFloat
+    var velocityY: CGFloat
+    var isLightRed: Bool
+}
+
+struct ParticleView: View {
+    @State private var particles: [Particle] = []
+    
+    var body: some View {
+        TimelineView(.animation) { timeline in
+            Canvas { context, size in
+                let redIcon = context.resolveSymbol(id: 0)!
+                let lightRedIcon = context.resolveSymbol(id: 1)!
+                
+                for particle in particles {
+                    let resolvedIcon = particle.isLightRed ? lightRedIcon : redIcon
+                    
+                    context.opacity = particle.opacity
+                    context.draw(
+                        resolvedIcon,
+                        at: CGPoint(x: particle.x + particle.size / 2, y: particle.y + particle.size / 2),
+                        anchor: .center
+                    )
+                }
+            } symbols: {
+                Image(systemName: "mic.fill")
+                    .foregroundStyle(.red)
+                    .tag(0)
+                
+                Image(systemName: "mic.fill")
+                    .foregroundStyle(Color(red: 1.0, green: 0.4, blue: 0.4))
+                    .tag(1)
+            }
+            .onAppear {
+                initializeParticles()
+            }
+            .onChange(of: timeline.date) { _ in
+                updateParticles()
+            }
+        }
+    }
+    
+    private func initializeParticles() {
+        let screenWidth = UIScreen.main.bounds.width
+        let screenHeight = UIScreen.main.bounds.height
+        
+        particles = (0..<30).map { _ in
+            Particle(
+                x: CGFloat.random(in: 0...screenWidth),
+                y: CGFloat.random(in: 0...screenHeight),
+                size: CGFloat.random(in: 6...12),
+                opacity: Double.random(in: 0.1...0.25),
+                velocityX: CGFloat.random(in: -0.5...0.5),
+                velocityY: CGFloat.random(in: -0.8...(-0.2)),
+                isLightRed: Bool.random()
+            )
+        }
+    }
+    
+    private func updateParticles() {
+        let screenWidth = UIScreen.main.bounds.width
+        let screenHeight = UIScreen.main.bounds.height
+        
+        for i in particles.indices {
+            particles[i].x += particles[i].velocityX
+            particles[i].y += particles[i].velocityY
+            
+            // Wrap around screen edges
+            if particles[i].x < -10 {
+                particles[i].x = screenWidth + 10
+            } else if particles[i].x > screenWidth + 10 {
+                particles[i].x = -10
+            }
+            
+            if particles[i].y < -10 {
+                particles[i].y = screenHeight + 10
+            } else if particles[i].y > screenHeight + 10 {
+                particles[i].y = -10
+            }
+        }
+    }
+}
