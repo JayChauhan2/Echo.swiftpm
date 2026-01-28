@@ -126,8 +126,12 @@ struct RecordView: View {
                                             .padding()
                                             .frame(maxWidth: .infinity)
                                             .aspectRatio(1, contentMode: .fit)
-                                            .background(.ultraThinMaterial)
-                                            .cornerRadius(12)
+                                            .background(Color.white.opacity(0.12))
+                                            .cornerRadius(24)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 24)
+                                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                            )
                                         }
                                         .onLongPressGesture {
                                             recordingToDelete = recording
