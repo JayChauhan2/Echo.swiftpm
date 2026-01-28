@@ -44,6 +44,9 @@ struct ContentView: View {
                         VStack(spacing: 20) {
                             Spacer()
                             
+                            MotivationalMessageView()
+                                .padding(.bottom, 20)
+                            
                             Button(action: {
                                 if voiceRecorder.isRecording {
                                     voiceRecorder.stopRecording()
