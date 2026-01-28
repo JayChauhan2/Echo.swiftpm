@@ -31,7 +31,8 @@ let package = Package(
                 .portraitUpsideDown(.when(deviceFamilies: [.pad]))
             ],
             capabilities: [
-                .microphone(purposeString: "We need access to your microphone to record audio.")
+                .microphone(purposeString: "We need access to your microphone to record audio."),
+                .speechRecognition(purposeString: "We will analyze your voice to provide accurate results")
             ]
         )
     ],
@@ -48,4 +49,3 @@ let package = Package(
         )
     ]
 )
-
