@@ -14,6 +14,8 @@ struct Particle: Identifiable {
 
 struct ParticleView: View {
     var amplitude: Float = 0.0
+    var touchLocation: CGPoint = .zero // Add touch location property
+    
     @State private var particles: [Particle] = []
     
     // "Vibey" colors: Hot Pink, Electric Purple, Bright Orange, Cyan
@@ -82,19 +84,33 @@ struct ParticleView: View {
         let screenHeight = UIScreen.main.bounds.height
         
         // Amplitude factor to energize particles
-        // When amplitude is high (approx 0.0 to 1.0), particles move faster and maybe expand
-        let energyFactor = CGFloat(1.0 + (amplitude * 5.0)) 
+        let energyFactor = CGFloat(1.0 + (amplitude * 5.0))
         
         for i in particles.indices {
             // Apply velocity with energy
-            particles[i].x += particles[i].velocityX * energyFactor
-            particles[i].y += particles[i].velocityY * energyFactor
+            var dx = particles[i].velocityX * energyFactor
+            var dy = particles[i].velocityY * energyFactor
             
-            // Subtle pulse in size based on amplitude, keeping base size
-            // We won't mutate base size permanently, just effect would be better, 
-            // but for simple state update, let's just make them drift and wrap.
-            // If we want them to pulse, we'd need to store base size. 
-            // For now, let's focus on Speed = Energy.
+            // Interaction with touch
+            if touchLocation != .zero {
+                let particleCenter = CGPoint(x: particles[i].x + particles[i].size / 2, y: particles[i].y + particles[i].size / 2)
+                let distanceX = particleCenter.x - touchLocation.x
+                let distanceY = particleCenter.y - touchLocation.y
+                let distance = sqrt(distanceX * distanceX + distanceY * distanceY)
+                
+                let interactionRadius: CGFloat = 150.0
+                
+                if distance < interactionRadius {
+                    let force = (interactionRadius - distance) / interactionRadius
+                    let repulsionStrength: CGFloat = 5.0 // Adjust strength of repulsion
+                    
+                    dx += (distanceX / distance) * force * repulsionStrength
+                    dy += (distanceY / distance) * force * repulsionStrength
+                }
+            }
+            
+            particles[i].x += dx
+            particles[i].y += dy
             
             // Wrap around screen edges
             let margin: CGFloat = 50

@@ -8,6 +8,7 @@ struct RecordView: View {
     @State private var selectedRecording: Recording?
     @State private var recordingToDelete: Recording?
     @State private var showDeleteAlert = false
+    @State private var touchLocation: CGPoint = .zero // Store touch location
     
     var body: some View {
         NavigationStack {
@@ -15,8 +16,8 @@ struct RecordView: View {
                 // Background & Glow
                 Color.black.ignoresSafeArea()
                 
-                // Floating particles
-                ParticleView(amplitude: voiceRecorder.currentAmplitude)
+                // Floating particles with touch interaction
+                ParticleView(amplitude: voiceRecorder.currentAmplitude, touchLocation: touchLocation)
                     .ignoresSafeArea()
                 
                 if voiceRecorder.isRecording {
@@ -103,7 +104,7 @@ struct RecordView: View {
                                     GridItem(.flexible(), spacing: 15),
                                     GridItem(.flexible(), spacing: 15)
                                 ], spacing: 15) {
-                                    ForEach(storage.recordings) { recording in
+                                    ForEach(Array(storage.recordings.enumerated()), id: \.element.id) { index, recording in
                                         Button(action: {
                                             selectedRecording = recording
                                             voiceRecorder.loadRecording(recording)
@@ -112,7 +113,9 @@ struct RecordView: View {
                                             VStack(spacing: 8) {
                                                 Image(systemName: "waveform")
                                                     .font(.system(size: 30))
-                                                    .foregroundStyle(.red)
+                                                    .foregroundStyle(
+                                                        Color(hue: (Double(index) * 0.1).truncatingRemainder(dividingBy: 1.0), saturation: 1.0, brightness: 1.0)
+                                                    ) // Rainbow colors
                                                 
                                                 Text(recording.date, style: .date)
                                                     .font(.caption2)
@@ -126,11 +129,31 @@ struct RecordView: View {
                                             .padding()
                                             .frame(maxWidth: .infinity)
                                             .aspectRatio(1, contentMode: .fit)
-                                            .background(Color.white.opacity(0.12))
-                                            .cornerRadius(24)
+                                            .background {
+                                                ZStack {
+                                                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                                        .fill(.ultraThinMaterial)
+                                                    
+                                                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                                        .fill(
+                                                            LinearGradient(
+                                                                colors: [.white.opacity(0.25), .white.opacity(0.05)],
+                                                                startPoint: .topLeading,
+                                                                endPoint: .bottomTrailing
+                                                            )
+                                                        )
+                                                }
+                                            }
                                             .overlay(
-                                                RoundedRectangle(cornerRadius: 24)
-                                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                                    .stroke(
+                                                        LinearGradient(
+                                                            colors: [.white.opacity(0.5), .white.opacity(0.1)],
+                                                            startPoint: .topLeading,
+                                                            endPoint: .bottomTrailing
+                                                        ),
+                                                        lineWidth: 1
+                                                    )
                                             )
                                         }
                                         .onLongPressGesture {
@@ -209,6 +232,15 @@ struct RecordView: View {
                     .zIndex(2)
                 }
             }
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        touchLocation = value.location
+                    }
+                    .onEnded { _ in
+                        touchLocation = .zero
+                    }
+            )
             .navigationDestination(isPresented: $showPlayback) {
                 if let recording = selectedRecording {
                     PlaybackView(voiceRecorder: voiceRecorder, storage: storage, recording: recording)
