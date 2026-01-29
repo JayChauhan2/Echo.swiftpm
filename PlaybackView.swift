@@ -12,6 +12,10 @@ struct PlaybackView: View {
     @State private var scrubbingTime: TimeInterval = 0
     @State private var initialScrubTime: TimeInterval = 0
     
+    // Zoom control
+    @State private var zoomScale: CGFloat = 1.0
+    @State private var lastZoomScale: CGFloat = 1.0
+    
     private func formattedTime(_ time: TimeInterval) -> String {
         let minutes = Int(time) / 60
         let seconds = Int(time) % 60
@@ -37,8 +41,8 @@ struct PlaybackView: View {
             // Audio Visualization Graph
             ZStack {
                 GeometryReader { geometry in
-                    let barWidth: CGFloat = 6
-                    let spacing: CGFloat = 4
+                    let barWidth: CGFloat = 6 * zoomScale
+                    let spacing: CGFloat = 4 * zoomScale
                     let totalBarWidth = barWidth + spacing
                     let totalWidth = CGFloat(voiceRecorder.audioSamples.count) * totalBarWidth
                     
@@ -114,50 +118,62 @@ struct PlaybackView: View {
                     // Gesture is attached to the CONTAINER (GeometryReader), not the moving waveform
                     .contentShape(Rectangle()) // Ensure hit testing works on empty space
                     .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { value in
-                                if !isDragging {
-                                    isDragging = true
-                                    voiceRecorder.pausePlayback()
+                        SimultaneousGesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { value in
+                                    if !isDragging {
+                                        isDragging = true
+                                        voiceRecorder.pausePlayback()
+                                        
+                                        // Calculate Seek Time from Tap Location (Start)
+                                        // 1. Calculate the 'offset' of the waveform at the MOMENT dragging started
+                                        //    Equation: ViewX = WaveformX + Offset
+                                        //    Offset = Center - CurrentX (at start)
+                                        let startCurrentX = (CGFloat(voiceRecorder.currentTime / duration) * totalWidth)
+                                        let startOffset = centerOffset - startCurrentX
+                                        
+                                        // 2. Find where the tap occurred in Waveform Coordinates
+                                        //    TapX = StartLocationX
+                                        //    WaveformTapX = TapX - StartOffset
+                                        let tapX = value.startLocation.x
+                                        let waveformTapX = tapX - startOffset
+                                        
+                                        // 3. Convert WaveformTapX to Time
+                                        let tappedTime = Double(waveformTapX / totalWidth) * duration
+                                        
+                                        initialScrubTime = max(0, min(duration, tappedTime))
+                                        scrubbingTime = initialScrubTime
+                                    }
                                     
-                                    // Calculate Seek Time from Tap Location (Start)
-                                    // 1. Calculate the 'offset' of the waveform at the MOMENT dragging started
-                                    //    Equation: ViewX = WaveformX + Offset
-                                    //    Offset = Center - CurrentX (at start)
-                                    let startCurrentX = (CGFloat(voiceRecorder.currentTime / duration) * totalWidth)
-                                    let startOffset = centerOffset - startCurrentX
+                                    // Handle Dragging relatively from the Initial Tap
+                                    // DragDelta is translation. width
+                                    // Moving finger LEFT (negative translation) should move Time FORWARD?
+                                    // Standard scrolling: Drag Left -> View moves Left -> Show content to the Right (Later time).
+                                    // So Time increases.
+                                    // Drag Delta Pixels -> Time Delta
+                                    let dragSeconds = Double(-value.translation.width / pixelsPerSecond)
                                     
-                                    // 2. Find where the tap occurred in Waveform Coordinates
-                                    //    TapX = StartLocationX
-                                    //    WaveformTapX = TapX - StartOffset
-                                    let tapX = value.startLocation.x
-                                    let waveformTapX = tapX - startOffset
                                     
-                                    // 3. Convert WaveformTapX to Time
-                                    let tappedTime = Double(waveformTapX / totalWidth) * duration
-                                    
-                                    initialScrubTime = max(0, min(duration, tappedTime))
-                                    scrubbingTime = initialScrubTime
+                                    let newTime = max(0, min(duration, initialScrubTime + dragSeconds))
+                                    scrubbingTime = newTime
                                 }
-                                
-                                // Handle Dragging relatively from the Initial Tap
-                                // DragDelta is translation. width
-                                // Moving finger LEFT (negative translation) should move Time FORWARD?
-                                // Standard scrolling: Drag Left -> View moves Left -> Show content to the Right (Later time).
-                                // So Time increases.
-                                // Drag Delta Pixels -> Time Delta
-                                let dragSeconds = Double(-value.translation.width / pixelsPerSecond)
-                                
-                                
-                                let newTime = max(0, min(duration, initialScrubTime + dragSeconds))
-                                scrubbingTime = newTime
-                            }
-                            .onEnded { value in
-                                // Finalize Seek
-                                voiceRecorder.seek(to: scrubbingTime)
-                                voiceRecorder.startPlayback()
-                                isDragging = false
-                            }
+                                .onEnded { value in
+                                    // Finalize Seek
+                                    voiceRecorder.seek(to: scrubbingTime)
+                                    voiceRecorder.startPlayback()
+                                    isDragging = false
+                                },
+                            MagnificationGesture()
+                                .onChanged { scale in
+                                    let delta = scale / lastZoomScale
+                                    lastZoomScale = scale
+                                    let newScale = zoomScale * delta
+                                    zoomScale = min(max(newScale, 0.5), 5.0)
+                                }
+                                .onEnded { _ in
+                                    lastZoomScale = 1.0
+                                }
+                        )
                     )
                 }
                 
