@@ -97,6 +97,9 @@ class CameraManager: NSObject, ObservableObject {
              if connection.isVideoMirroringSupported {
                  connection.isVideoMirrored = true // Mirror front camera
              }
+             if connection.isVideoOrientationSupported {
+                 connection.videoOrientation = .portrait
+             }
         }
         
         movieOutput.startRecording(to: tempURL, recordingDelegate: self)

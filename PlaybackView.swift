@@ -72,13 +72,13 @@ struct VideoPlaybackView: View {
             ZStack(alignment: .bottom) {
                 if let player = player {
                     VideoPlayer(player: player)
-                        .aspectRatio(16/9, contentMode: .fit) // Standard video aspect
+                        .aspectRatio(9/16, contentMode: .fit) // Vertical video aspect
                         .cornerRadius(12)
-                        .padding()
                 } else {
                     Rectangle()
                         .fill(Color.gray.opacity(0.3))
-                        .aspectRatio(16/9, contentMode: .fit)
+                        .aspectRatio(9/16, contentMode: .fit)
+                        .cornerRadius(12)
                         .overlay(SwiftUI.ProgressView())
                 }
                 
