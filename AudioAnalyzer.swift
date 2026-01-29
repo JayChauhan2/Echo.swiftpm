@@ -15,16 +15,13 @@ class AudioAnalyzer: NSObject {
         // 2. Audio Signal Analysis
         let (volumeStability, _) = try analyzeAudioSignal(url: url)
         
-        // 3. Segment Analysis & Heuristic Inference
-        let analysisSegments = analyzeSegments(
+        // 3. Segment Analysis & Heuristic Inference (Granular)
+        let analysisSegments = analyzeGranularSegments(
             segments: segments,
-            totalDuration: segments.last?.timestamp ?? 0 + (segments.last?.duration ?? 0),
-            volumeStability: volumeStability, // Passing global stability for now as a fallback/baseline
-            globalSpeechRate: speechRate
+            volumeStability: volumeStability
         )
         
-        // Determine global state based on dominant segment state or weighted average
-        // For simplicity, let's keep the previous logic but maybe refine it
+        // Determine global state based on weighted duration of states
         let state = inferGlobalState(segments: analysisSegments, globalRate: speechRate, globalStability: volumeStability, globalPauseFreq: pauseFreq)
         
         // Calculate a simple confidence score based on the state
@@ -50,83 +47,97 @@ class AudioAnalyzer: NSObject {
     
     // MARK: - Private Helpers
     
-    private func analyzeSegments(segments: [SFTranscriptionSegment], totalDuration: TimeInterval, volumeStability: Double, globalSpeechRate: Double) -> [AnalysisSegment] {
+    private func analyzeGranularSegments(segments: [SFTranscriptionSegment], volumeStability: Double) -> [AnalysisSegment] {
         var analysisSegments: [AnalysisSegment] = []
-        
-        // Group words into phrases based on pauses
         var currentPhrase: [SFTranscriptionSegment] = []
-        var lastEndTime: TimeInterval = 0
         
-        for segment in segments {
-            let gap = segment.timestamp - lastEndTime
+        // Filler words list (lowercase for comparison)
+        let fillers: Set<String> = ["um", "uh", "hmm", "er", "ah", "like"]
+        
+        for (index, segment) in segments.enumerated() {
+            let word = segment.substring.lowercased().trimmingCharacters(in: .punctuationCharacters)
             
-            if gap > 0.5 && !currentPhrase.isEmpty {
-                // End of phrase, analyze it
-                if let phraseSegment = createAnalysisSegment(from: currentPhrase, previousEndTime: lastEndTime - gap, globalStability: volumeStability) {
-                    analysisSegments.append(phraseSegment)
+            // Check for filler word
+            if fillers.contains(word) {
+                // 1. Analyze pending phrase if exists
+                if !currentPhrase.isEmpty {
+                    if let phraseSegment = analyzePhrase(currentPhrase, volumeStability: volumeStability) {
+                        analysisSegments.append(phraseSegment)
+                    }
+                    currentPhrase = []
                 }
-                currentPhrase = []
+                
+                // 2. Add Hesitant segment for the filler
+                // Add a small buffer to visual width if short
+                let start = segment.timestamp
+                let end = segment.timestamp + segment.duration
+                analysisSegments.append(AnalysisSegment(startTime: start, endTime: end, state: .hesitant))
+                
+                continue
+            }
+            
+            // Check for significant pause before this word -> Trigger phrase break
+            if let lastWord = currentPhrase.last {
+                let gap = segment.timestamp - (lastWord.timestamp + lastWord.duration)
+                if gap > 0.45 { // New clause due to pause
+                    if let phraseSegment = analyzePhrase(currentPhrase, volumeStability: volumeStability) {
+                        analysisSegments.append(phraseSegment)
+                    }
+                    currentPhrase = []
+                }
             }
             
             currentPhrase.append(segment)
-            lastEndTime = segment.timestamp + segment.duration
-        }
-        
-        // Capture last phrase
-        if !currentPhrase.isEmpty {
-            if let phraseSegment = createAnalysisSegment(from: currentPhrase, previousEndTime: lastEndTime, globalStability: volumeStability) {
-                analysisSegments.append(phraseSegment)
+            
+            // If it's the last word, flush
+            if index == segments.count - 1 {
+                if let phraseSegment = analyzePhrase(currentPhrase, volumeStability: volumeStability) {
+                    analysisSegments.append(phraseSegment)
+                }
             }
         }
         
-        // Fill in gaps with "Neutral" Segments (or Silence)
-        // For simplicity, let's just return the active segments. PlaybackView can handle gaps (default gray).
         return analysisSegments
     }
     
-    private func createAnalysisSegment(from words: [SFTranscriptionSegment], previousEndTime: TimeInterval, globalStability: Double) -> AnalysisSegment? {
+    private func analyzePhrase(_ words: [SFTranscriptionSegment], volumeStability: Double) -> AnalysisSegment? {
         guard let first = words.first, let last = words.last else { return nil }
         
         let startTime = first.timestamp
         let endTime = last.timestamp + last.duration
         let duration = endTime - startTime
         
-        // 1. Calculate Local Metrics
-        let wordCount = words.count
-        let localWPM = Double(wordCount) / (duration / 60.0)
+        // Skip extremely short artifacts
+        if duration < 0.1 { return nil }
         
-        // Average confidence of words in this segment
+        let wordCount = words.count
+        // Avoid division by zero
+        let durationMin = max(duration / 60.0, 0.001)
+        let localWPM = Double(wordCount) / durationMin
+        
         let avgConfidence = words.reduce(0.0) { $0 + Double($1.confidence) } / Double(wordCount)
         
-        // Detect hesitation within the phrase (gaps between words < 0.5s but noticeable)
-        var hesitationCount = 0
-        for i in 0..<words.count - 1 {
-            let gap = words[i+1].timestamp - (words[i].timestamp + words[i].duration)
-            if gap > 0.2 { // Small gaps indicating hesitation
-                hesitationCount += 1
-            }
-        }
-        let isHesitantPhrase = hesitationCount > 1
-        
-        // 2. Apply Heuristics
         let state: CommunicationState
         
-        // Confident: Steady volume (global proxy), fluent (no internal hesitations), proper pace
-        // Steady volume + low pause rate
-        if globalStability > 0.6 && !isHesitantPhrase && localWPM > 110 && avgConfidence > 0.6 {
-            state = .confident
-        }
-        // Hesitant: Frequent pauses + fillers (simulated by small gaps)
-        else if isHesitantPhrase || (localWPM < 90 && wordCount > 2) {
-            state = .hesitant
-        }
-        // Unclear: Long speech but low clarity words
-        else if duration > 3.0 && avgConfidence < 0.4 {
+        // --- Per-Clause Heuristics ---
+        
+        // Unclear: Very low confidence regardless of speed
+        if avgConfidence < 0.4 {
             state = .unclear
         }
-        // Grounded: Calm pace + clear phrasing
-        else if localWPM >= 90 && localWPM <= 130 && avgConfidence > 0.8 && !isHesitantPhrase {
+        // Grounded: Calm, steady pace, high clarity
+        // WPM Range: 90 - 130
+        else if localWPM >= 80 && localWPM <= 140 && avgConfidence > 0.8 {
             state = .grounded
+        }
+        // Confident: Faster but clear, or just solid stats
+        // WPM Range: 130 - 180 (or just generally high confidence + stability)
+        else if (localWPM > 130 && localWPM < 190 && avgConfidence > 0.7) || (avgConfidence > 0.9 && volumeStability > 0.5) {
+            state = .confident
+        }
+        // Hesitant Check for whole phrase (if very slow)
+        else if localWPM < 70 && wordCount > 2 {
+            state = .hesitant
         }
         else {
             state = .neutral
@@ -136,16 +147,33 @@ class AudioAnalyzer: NSObject {
     }
     
     private func inferGlobalState(segments: [AnalysisSegment], globalRate: Double, globalStability: Double, globalPauseFreq: Double) -> CommunicationState {
-        // If majority of segments are a certain state, adopt it
-        let counts = segments.reduce(into: [CommunicationState: Int]()) { $0[$1.state, default: 0] += 1 }
+        // Calculate total duration for each state
+        var durations: [CommunicationState: TimeInterval] = [
+            .confident: 0,
+            .grounded: 0,
+            .hesitant: 0,
+            .unclear: 0,
+            .neutral: 0
+        ]
         
-        if let (maxState, count) = counts.max(by: { $0.value < $1.value }) {
-            if Double(count) / Double(segments.count) > 0.5 {
-                return maxState
-            }
+        for segment in segments {
+            let dur = segment.endTime - segment.startTime
+            durations[segment.state, default: 0] += dur
         }
         
-        // Fallback to original global heuristics if no dominant segment state
+        // Find state with max duration
+        let maxDurationState = durations.max(by: { $0.value < $1.value })?.key
+        
+        // If dominant state has significant presence (> 30% of time?), use it.
+        // Or specific overrides: if hesitation is high (>20%), maybe flag as hesitant overall?
+        
+        let totalTime = segments.last?.endTime ?? 1.0
+        
+        if let dominant = maxDurationState, durations[dominant]! > (totalTime * 0.4) {
+            return dominant
+        }
+        
+        // Fallback to original global heuristics if no clear dominant segment state
         if globalStability > 0.6 && globalPauseFreq < 8.0 && globalRate > 100 && globalRate < 160 {
             return .confident
         }
