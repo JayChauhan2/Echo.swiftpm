@@ -130,6 +130,7 @@ struct RecordView: View {
     
     func handleAudioRecording() {
         if voiceRecorder.isRecording {
+            HapticManager.shared.heavy() // Heavy haptic when stopping
             voiceRecorder.stopRecording()
             withAnimation { isAnalyzing = true }
             
@@ -140,15 +141,18 @@ struct RecordView: View {
                     
                     try? await Task.sleep(nanoseconds: 2 * 1_000_000_000)
                     
+                    HapticManager.shared.success() // Success haptic after analysis
                     withAnimation {
                         isAnalyzing = false
                         showPlayback = true
                     }
                 } else {
+                    HapticManager.shared.error() // Error haptic if recording failed
                     withAnimation { isAnalyzing = false }
                 }
             }
         } else {
+            HapticManager.shared.medium() // Medium haptic when starting
             voiceRecorder.startRecording()
         }
     }

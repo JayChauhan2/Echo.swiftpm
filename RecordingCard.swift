@@ -19,7 +19,7 @@ struct RecordingCard: View {
                 Color(hue: (Double(index) * 0.1).truncatingRemainder(dividingBy: 1.0), saturation: 1.0, brightness: 1.0)
             )
             
-            Text(recording.date, style: .date)
+            Text(formatDate(recording.date))
                 .font(.caption2)
                 .foregroundStyle(.white)
                 .lineLimit(1)
@@ -32,6 +32,12 @@ struct RecordingCard: View {
         .frame(maxWidth: .infinity)
         .aspectRatio(1, contentMode: .fit)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, h:mm a" // e.g., "Jan 29, 2:30 PM"
+        return formatter.string(from: date)
     }
     
     private func formatDuration(_ duration: TimeInterval) -> String {

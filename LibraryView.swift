@@ -59,6 +59,7 @@ struct LibraryView: View {
                             ], spacing: 15) {
                                 ForEach(Array(storage.recordings.enumerated()), id: \.element.id) { index, recording in
                                     Button(action: {
+                                        HapticManager.shared.light() // Light haptic for selection
                                         selectedRecording = recording
                                         if !recording.isVideo {
                                             playbackVoiceRecorder.loadRecording(recording)
@@ -69,6 +70,7 @@ struct LibraryView: View {
                                     }
                                     .contextMenu {
                                         Button(role: .destructive) {
+                                            HapticManager.shared.warning() // Warning haptic for delete
                                             recordingToDelete = recording
                                             showDeleteAlert = true
                                         } label: {
@@ -104,9 +106,12 @@ struct LibraryView: View {
         }
         .background(Color.clear)
         .alert("Delete Recording", isPresented: $showDeleteAlert, presenting: recordingToDelete) { recording in
-            Button("Cancel", role: .cancel) { }
+            Button("Cancel", role: .cancel) { 
+                HapticManager.shared.light() // Light haptic for cancel
+            }
                 .tint(.white)
             Button("Delete", role: .destructive) {
+                HapticManager.shared.error() // Error haptic for deletion
                 storage.deleteRecording(recording)
             }
             .tint(.red)
@@ -117,8 +122,7 @@ struct LibraryView: View {
     
     private func getRecordingName(_ recording: Recording) -> String {
         let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        formatter.timeStyle = .short
+        formatter.dateFormat = "MMM d, h:mm a" // e.g., "Jan 29, 2:30 PM"
         return formatter.string(from: recording.date)
     }
 }

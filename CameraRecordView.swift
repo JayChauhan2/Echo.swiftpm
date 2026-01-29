@@ -140,6 +140,7 @@ struct CameraRecordView: View {
     
     func handleCameraRecording() {
         if cameraManager.isRecording {
+            HapticManager.shared.heavy() // Heavy haptic when stopping
             Task {
                 cameraManager.stopRecording()
                 let videoAnalysis = videoAnalyzer.stopAnalysis()
@@ -165,15 +166,18 @@ struct CameraRecordView: View {
                     
                     try? await Task.sleep(nanoseconds: 2 * 1_000_000_000) // Analysis delay for effect
                     
+                    HapticManager.shared.success() // Success haptic after analysis
                     withAnimation {
                         isAnalyzing = false
                         showPlayback = true
                     }
                 } else {
+                    HapticManager.shared.error() // Error haptic if recording failed
                     withAnimation { isAnalyzing = false }
                 }
             }
         } else {
+            HapticManager.shared.medium() // Medium haptic when starting
             videoAnalyzer.startAnalysis()
             cameraManager.startRecording()
         }

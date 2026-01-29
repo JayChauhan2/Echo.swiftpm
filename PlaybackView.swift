@@ -21,6 +21,7 @@ struct PlaybackView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
+                    HapticManager.shared.warning() // Warning haptic for delete
                     showDeleteAlert = true
                 }) {
                     Image(systemName: "trash")
@@ -29,9 +30,12 @@ struct PlaybackView: View {
             }
         }
         .alert("Delete Recording", isPresented: $showDeleteAlert) {
-            Button("Cancel", role: .cancel) { }
+            Button("Cancel", role: .cancel) { 
+                HapticManager.shared.light() // Light haptic for cancel
+            }
                 .tint(.white)
             Button("Delete", role: .destructive) {
+                HapticManager.shared.error() // Error haptic for deletion
                 storage.deleteRecording(recording)
                 dismiss()
             }
@@ -43,10 +47,8 @@ struct PlaybackView: View {
     
     func getRecordingName() -> String {
         let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        formatter.timeStyle = .short
-        let fullName = formatter.string(from: recording.date)
-        return fullName.count > 20 ? String(fullName.prefix(20)) + "..." : fullName
+        formatter.dateFormat = "MMM d, h:mm a" // e.g., "Jan 29, 2:30 PM"
+        return formatter.string(from: recording.date)
     }
 }
 
@@ -372,6 +374,7 @@ struct AudioPlaybackView: View {
             Spacer()
             
             Button(action: {
+                HapticManager.shared.light() // Light haptic for play/pause
                 if voiceRecorder.isPlaying {
                     voiceRecorder.pausePlayback()
                 } else {
