@@ -5,6 +5,13 @@ enum CommunicationState: String, Codable {
     case neutral = "Neutral"
     case hesitant = "Hesitant"
     case unclear = "Unclear"
+    case grounded = "Grounded"
+}
+
+struct AnalysisSegment: Codable {
+    let startTime: TimeInterval
+    let endTime: TimeInterval
+    let state: CommunicationState
 }
 
 struct AudioAnalysisResult: Codable {
@@ -14,4 +21,5 @@ struct AudioAnalysisResult: Codable {
     let communicationState: CommunicationState
     let transcription: String
     let confidenceScore: Double // 0.0 - 1.0
+    let segments: [AnalysisSegment]
 }

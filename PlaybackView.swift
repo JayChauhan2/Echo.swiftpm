@@ -54,8 +54,11 @@ struct PlaybackView: View {
                         // Waveform
                         HStack(spacing: spacing) {
                             ForEach(voiceRecorder.audioSamples.indices, id: \.self) { index in
+                                let sampleTime = Double(index) / Double(voiceRecorder.audioSamples.count) * duration
+                                let color = getSegmentColor(at: sampleTime, segments: recording.analysis?.segments)
+                                
                                 RoundedRectangle(cornerRadius: 3)
-                                    .fill(Color.red)
+                                    .fill(color)
                                     // Boost amplitude to fill height: * 400. Clamp to max 250.
                                     .frame(width: barWidth, height: min(250, max(4, CGFloat(voiceRecorder.audioSamples[index]) * 400)))
                             }
@@ -246,7 +249,7 @@ struct PlaybackView: View {
                     showDeleteAlert = true
                 }) {
                     Image(systemName: "trash")
-                        .foregroundColor(.red)
+                    .foregroundColor(.red)
                 }
             }
         }
@@ -269,12 +272,25 @@ struct PlaybackView: View {
         }
     }
     
+    private func getSegmentColor(at time: TimeInterval, segments: [AnalysisSegment]?) -> Color {
+        guard let segments = segments else { return .gray }
+        
+        for segment in segments {
+            if time >= segment.startTime && time <= segment.endTime {
+                return getColor(for: segment.state)
+            }
+        }
+        
+        return .gray // Default
+    }
+    
     private func getColor(for state: CommunicationState) -> Color {
         switch state {
         case .confident: return .green
-        case .neutral: return .blue
+        case .neutral: return .gray
         case .hesitant: return .orange
         case .unclear: return .red
+        case .grounded: return .cyan
         }
     }
     
