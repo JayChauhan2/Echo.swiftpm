@@ -11,6 +11,7 @@ struct PlaybackView: View {
     @State private var isDragging = false
     @State private var scrubbingTime: TimeInterval = 0
     @State private var hoveredState: CommunicationState?
+    @State private var initialScrubTime: TimeInterval = 0
     
     private func formattedTime(_ time: TimeInterval) -> String {
         let minutes = Int(time) / 60
@@ -44,6 +45,11 @@ struct PlaybackView: View {
                     
                     // Center the current time
                     let duration = voiceRecorder.duration > 0 ? voiceRecorder.duration : 1
+                    
+                    // Pixels per second calculation
+                    // totalWidth corresponds to `duration`
+                    let pixelsPerSecond = totalWidth / duration
+                    
                     // Use scrubbing time if dragging, else current playback time
                     let timeToShow = isDragging ? scrubbingTime : voiceRecorder.currentTime
                     
@@ -51,6 +57,7 @@ struct PlaybackView: View {
                     let currentX = percent * totalWidth
                     let centerOffset = geometry.size.width / 2
                     
+                    // Waveform View
                     VStack(alignment: .leading, spacing: 0) {
                         // Waveform
                         HStack(spacing: spacing) {
@@ -75,8 +82,6 @@ struct PlaybackView: View {
                                 .frame(width: totalWidth)
                             
                             // Ticks and Labels
-                            // 1 second = 20 samples * 10 width = 200 points
-                            // Create range of seconds covering the duration
                             let secondsCount = Int(totalWidth / 200) + 1
                             
                             ForEach(0..<secondsCount, id: \.self) { second in
@@ -94,7 +99,7 @@ struct PlaybackView: View {
                                     .foregroundStyle(.gray)
                                     .offset(x: xPos + 4, y: 12)
                                 
-                                // Minor Ticks (every 0.2s = 4 bars = 40pt)
+                                // Minor Ticks
                                 ForEach(1..<5) { tick in
                                     Rectangle()
                                         .fill(Color.gray.opacity(0.5))
@@ -107,40 +112,61 @@ struct PlaybackView: View {
                     }
                     .frame(width: totalWidth, alignment: .leading)
                     .offset(x: centerOffset - currentX)
+                    // Gesture is attached to the CONTAINER (GeometryReader), not the moving waveform
+                    .contentShape(Rectangle()) // Ensure hit testing works on empty space
                     .gesture(
-                        DragGesture()
+                        DragGesture(minimumDistance: 0)
                             .onChanged { value in
                                 if !isDragging {
                                     isDragging = true
                                     voiceRecorder.pausePlayback()
-                                    // Initialize scrubbingTime to current valid time
-                                    scrubbingTime = voiceRecorder.currentTime
+                                    
+                                    // Calculate Seek Time from Tap Location (Start)
+                                    // 1. Calculate the 'offset' of the waveform at the MOMENT dragging started
+                                    //    Equation: ViewX = WaveformX + Offset
+                                    //    Offset = Center - CurrentX (at start)
+                                    let startCurrentX = (CGFloat(voiceRecorder.currentTime / duration) * totalWidth)
+                                    let startOffset = centerOffset - startCurrentX
+                                    
+                                    // 2. Find where the tap occurred in Waveform Coordinates
+                                    //    TapX = StartLocationX
+                                    //    WaveformTapX = TapX - StartOffset
+                                    let tapX = value.startLocation.x
+                                    let waveformTapX = tapX - startOffset
+                                    
+                                    // 3. Convert WaveformTapX to Time
+                                    let tappedTime = Double(waveformTapX / totalWidth) * duration
+                                    
+                                    initialScrubTime = max(0, min(duration, tappedTime))
+                                    scrubbingTime = initialScrubTime
                                 }
                                 
-                                // Calculate scrub based on drag translation
-                                // translation / totalBarWidth gives number of bars dragged
-                                // each bar is 0.05s (20Hz)
-                                // Pixels per second = 20 * 10 = 200
-                                let pixelsPerSecond = 20.0 * totalBarWidth
+                                // Handle Dragging relatively from the Initial Tap
+                                // DragDelta is translation. width
+                                // Moving finger LEFT (negative translation) should move Time FORWARD?
+                                // Standard scrolling: Drag Left -> View moves Left -> Show content to the Right (Later time).
+                                // So Time increases.
+                                // Drag Delta Pixels -> Time Delta
                                 let dragSeconds = Double(-value.translation.width / pixelsPerSecond)
                                 
-                                let newTime = max(0, min(duration, voiceRecorder.currentTime + dragSeconds))
+                                let newTime = max(0, min(duration, initialScrubTime + dragSeconds))
                                 scrubbingTime = newTime
                                 
                                 // Update Hover State
                                 hoveredState = getSegmentState(at: newTime, segments: recording.analysis?.segments)
                             }
                             .onEnded { value in
-                                let totalBarWidth = barWidth + spacing
-                                let pixelsPerSecond = 20.0 * totalBarWidth
-                                let dragSeconds = Double(-value.translation.width / pixelsPerSecond)
-                                let newTime = max(0, min(duration, voiceRecorder.currentTime + dragSeconds))
-                                
-                                voiceRecorder.seek(to: newTime)
+                                // Finalize Seek
+                                voiceRecorder.seek(to: scrubbingTime)
                                 voiceRecorder.startPlayback()
                                 isDragging = false
-                                scrubbingTime = 0
-                                hoveredState = nil
+                                
+                                // Delay hiding functionality
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                    if !isDragging {
+                                        hoveredState = nil
+                                    }
+                                }
                             }
                     )
                 }
