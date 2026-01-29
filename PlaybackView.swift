@@ -10,7 +10,6 @@ struct PlaybackView: View {
     @State private var showDeleteAlert = false
     @State private var isDragging = false
     @State private var scrubbingTime: TimeInterval = 0
-    @State private var hoveredState: CommunicationState?
     @State private var initialScrubTime: TimeInterval = 0
     
     private func formattedTime(_ time: TimeInterval) -> String {
@@ -149,39 +148,30 @@ struct PlaybackView: View {
                                 // Drag Delta Pixels -> Time Delta
                                 let dragSeconds = Double(-value.translation.width / pixelsPerSecond)
                                 
+                                
                                 let newTime = max(0, min(duration, initialScrubTime + dragSeconds))
                                 scrubbingTime = newTime
-                                
-                                // Update Hover State
-                                hoveredState = getSegmentState(at: newTime, segments: recording.analysis?.segments)
                             }
                             .onEnded { value in
                                 // Finalize Seek
                                 voiceRecorder.seek(to: scrubbingTime)
                                 voiceRecorder.startPlayback()
                                 isDragging = false
-                                
-                                // Delay hiding functionality
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                                    if !isDragging {
-                                        hoveredState = nil
-                                    }
-                                }
                             }
                     )
                 }
                 
-                // Tooltip (Floating Pill)
-                if let hoveredState = hoveredState {
-                    Text(hoveredState.rawValue)
+                // Tooltip (Floating Pill) - Always Visible
+                if let state = getSegmentState(at: isDragging ? scrubbingTime : voiceRecorder.currentTime, segments: recording.analysis?.segments) {
+                    Text(state.rawValue)
                         .font(.caption2)
                         .fontWeight(.bold)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(getColor(for: hoveredState))
+                        .background(getColor(for: state))
                         .foregroundStyle(.white)
                         .clipShape(Capsule())
-                        .offset(y: -40) // Position above playhead
+                        .offset(y: -130) // Positioned just below the top edge
                 }
                 
                 // Static Playhead
