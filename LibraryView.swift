@@ -17,7 +17,7 @@ struct LibraryView: View {
                 // Background - Remove solid color to show Global Particles
                 Color.black.ignoresSafeArea()
                 
-                ParticleView(amplitude: effectsState.amplitude, touchLocation: effectsState.touchLocation)
+                ParticleView(amplitude: effectsState.amplitude, touchLocation: effectsState.touchLocation, gravity: effectsState.gravity)
                     .ignoresSafeArea()
                 
                 // Ensure amplitude is reset when entering library
@@ -31,7 +31,7 @@ struct LibraryView: View {
                         Text("Library")
                             .font(.largeTitle)
                             .fontWeight(.bold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.red)
                             .padding(.top)
                             .padding(.horizontal)
                         

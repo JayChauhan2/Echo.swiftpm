@@ -114,11 +114,18 @@ struct CameraRecordView: View {
                     .zIndex(2)
                 }
             }
-            .navigationTitle("Camera")
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                 // Might add switching to front/back camera here later
+                ToolbarItem(placement: .principal) {
+                    Text("Camera")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.red)
+                }
             }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(Color.clear, for: .navigationBar)
             .navigationDestination(isPresented: $showPlayback) {
                 if let recording = selectedRecording {
                     // For playback we need a dummy voiceRecorder as PlaybackView requires it

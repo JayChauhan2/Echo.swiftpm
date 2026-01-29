@@ -16,7 +16,8 @@ struct Particle: Identifiable {
 
 struct ParticleView: View {
     var amplitude: Float = 0.0
-    var touchLocation: CGPoint = .zero // Add touch location property
+    var touchLocation: CGPoint = .zero
+    var gravity: CGPoint = .zero
     
     @State private var particles: [Particle] = []
     
@@ -117,6 +118,11 @@ struct ParticleView: View {
                     particles[i].velocityY += (distanceY / distance) * force * pushStrength
                 }
             }
+            
+            // Apply gravity force based on device rotation
+            let gravityStrength: CGFloat = 0.03
+            particles[i].velocityX += gravity.x * gravityStrength
+            particles[i].velocityY += gravity.y * gravityStrength
             
             // Move particle
             // Base movement modulated by energy + accumulated momentum

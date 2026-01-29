@@ -15,7 +15,7 @@ struct RecordView: View {
                 // Background - Remove solid color to show Global Particles
                 Color.black.ignoresSafeArea()
                 
-                ParticleView(amplitude: effectsState.amplitude, touchLocation: effectsState.touchLocation)
+                ParticleView(amplitude: effectsState.amplitude, touchLocation: effectsState.touchLocation, gravity: effectsState.gravity)
                     .ignoresSafeArea()
                 
                 // Audio Amplitude Sync
@@ -77,7 +77,7 @@ struct RecordView: View {
                 if isAnalyzing {
                     ZStack {
                         Color.black.ignoresSafeArea()
-                        ParticleView().ignoresSafeArea().opacity(0.5)
+                        ParticleView(gravity: effectsState.gravity).ignoresSafeArea().opacity(0.5)
                         
                         VStack(spacing: 30) {
                             AnalysisLoadingView()
@@ -103,8 +103,18 @@ struct RecordView: View {
                         effectsState.touchLocation = .zero
                     }
             )
-            .navigationTitle("Record")
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Voice")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.red)
+                }
+            }
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(Color.clear, for: .navigationBar)
             .navigationDestination(isPresented: $showPlayback) {
                 if let recording = selectedRecording {
                     PlaybackView(voiceRecorder: voiceRecorder, storage: storage, recording: recording)
