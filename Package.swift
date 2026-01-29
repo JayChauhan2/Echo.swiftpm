@@ -16,6 +16,7 @@ let package = Package(
         .iOSApplication(
             name: "Echo",
             targets: ["AppModule"],
+            bundleIdentifier: "com.jayc.echo",
             teamIdentifier: "3JB47XFYY5",
             displayVersion: "1.0",
             bundleVersion: "1",

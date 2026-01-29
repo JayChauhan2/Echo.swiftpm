@@ -58,7 +58,7 @@ class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudi
         
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .default)
+            try session.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
             try session.setActive(true)
             
             audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
@@ -148,6 +148,11 @@ class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudi
         let audioFilename = getDocumentsDirectory().appendingPathComponent(filename)
         
         do {
+            // Ensure session is set to speaker
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
+            try session.setActive(true)
+            
             if audioPlayer == nil {
                 audioPlayer = try AVAudioPlayer(contentsOf: audioFilename)
                 audioPlayer?.delegate = self
