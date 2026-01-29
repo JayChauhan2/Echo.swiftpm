@@ -69,22 +69,21 @@ struct CameraRecordView: View {
                                 Image(systemName: "stop.circle.fill")
                                     .resizable()
                                     .aspectRatio(contentMode: .fit)
-                                    .frame(width: 80, height: 80)
+                                    .frame(width: 100, height: 100)
                                     .foregroundColor(.red)
                             } else {
                                 Image(systemName: "circle.fill") // Outer ring
                                     .resizable()
-                                    .frame(width: 80, height: 80)
+                                    .frame(width: 100, height: 100)
                                     .foregroundColor(.white)
                                 
                                 Image(systemName: "circle.fill") // Inner red button
                                     .resizable()
-                                    .frame(width: 60, height: 60)
+                                    .frame(width: 75, height: 75)
                                     .foregroundColor(.red)
                             }
                         }
                     }
-                    .padding(.bottom, 20)
                     
                     Text(cameraManager.isRecording ? "Recording Presence..." : "Tap to record")
                         .font(.headline)
