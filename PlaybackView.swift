@@ -112,8 +112,6 @@ struct VideoPlaybackView: View {
                          if let analysis = recording.videoAnalysis {
                              ForEach(analysis.events) { event in
                                  let startX = CGFloat(event.timestamp / recording.duration) * geometry.size.width
-                                 // Heuristic width: assume event lasts 2 seconds for visual clarity or until next event?
-                                 // Let's just make them markers
                                  let markerWidth: CGFloat = 4
                                  
                                  Rectangle()
@@ -129,24 +127,57 @@ struct VideoPlaybackView: View {
                              .frame(width: 2, height: 20)
                              .position(x: CGFloat(currentTime / recording.duration) * geometry.size.width, y: 10)
                      }
+                     .contentShape(Rectangle())
+                     .gesture(
+                         DragGesture(minimumDistance: 0)
+                             .onChanged { value in
+                                 let fraction = value.location.x / geometry.size.width
+                                 let time = Double(max(0, min(1, fraction))) * recording.duration
+                                 player?.seek(to: CMTime(seconds: time, preferredTimescale: 600))
+                                 currentTime = time
+                             }
+                     )
                 }
                 .frame(height: 20)
                 .padding(.horizontal)
             }
             .padding(.top, 10)
             
-            // Analysis Summary
-            if let analysis = recording.videoAnalysis {
-                 HStack(spacing: 20) {
-                     StatusValue(label: "Presence Score", value: String(format: "%.0f%%", analysis.presenceScore * 100))
-                     StatusValue(label: "Gaze Stability", value: String(format: "%.0f%%", analysis.gazeStabilityScore * 100))
+            // Speed Control & Analysis Summary
+            VStack {
+                 HStack {
+                     Text("Playback Speed")
+                         .font(.caption)
+                         .foregroundStyle(.gray)
+                     Spacer()
+                     Menu {
+                         Button("0.5x") { player?.rate = 0.5 }
+                         Button("1.0x") { player?.rate = 1.0 }
+                         Button("1.5x") { player?.rate = 1.5 }
+                         Button("2.0x") { player?.rate = 2.0 }
+                     } label: {
+                         Label(String(format: "%.1fx", player?.rate ?? 1.0), systemImage: "speedometer")
+                             .font(.subheadline)
+                             .foregroundStyle(.white)
+                             .padding(8)
+                             .background(Color.white.opacity(0.1))
+                             .cornerRadius(8)
+                     }
                  }
-                 .padding()
-                 .frame(maxWidth: .infinity)
-                 .background(Color.white.opacity(0.1))
-                 .cornerRadius(12)
-                 .padding()
+                 .padding(.horizontal)
+                 
+                 if let analysis = recording.videoAnalysis {
+                     HStack(spacing: 20) {
+                         StatusValue(label: "Presence Score", value: String(format: "%.0f%%", analysis.presenceScore * 100))
+                         StatusValue(label: "Gaze Stability", value: String(format: "%.0f%%", analysis.gazeStabilityScore * 100))
+                     }
+                     .padding()
+                     .frame(maxWidth: .infinity)
+                     .background(Color.white.opacity(0.1))
+                     .cornerRadius(12)
+                 }
             }
+            .padding()
             
             Spacer()
         }

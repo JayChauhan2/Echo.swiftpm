@@ -3,21 +3,29 @@ import SwiftUI
 struct RecordView: View {
     @StateObject var voiceRecorder = VoiceRecorder()
     @ObservedObject var storage: RecordingStorage
+    @EnvironmentObject var effectsState: GlobalEffectsState
     
     @State private var showPlayback = false
     @State private var isAnalyzing = false
     @State private var selectedRecording: Recording?
-    @State private var touchLocation: CGPoint = .zero
     
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background
+                // Background - Remove solid color to show Global Particles
                 Color.black.ignoresSafeArea()
                 
-                // Particle Visualization
-                ParticleView(amplitude: voiceRecorder.currentAmplitude, touchLocation: touchLocation)
+                ParticleView(amplitude: effectsState.amplitude, touchLocation: effectsState.touchLocation)
                     .ignoresSafeArea()
+                
+                // Audio Amplitude Sync
+                Color.clear
+                    .onChange(of: voiceRecorder.currentAmplitude) { newValue in
+                        effectsState.amplitude = newValue
+                    }
+                    .onAppear {
+                        effectsState.amplitude = 0.0
+                    }
                 
                 // Recording Ripple Effect
                 if voiceRecorder.isRecording {
@@ -33,9 +41,13 @@ struct RecordView: View {
                 
                 VStack(spacing: 0) {
                     Spacer()
-                    
-                    MotivationalMessageView()
-                        .padding(.bottom, 40)
+                     MotivationalMessageView()
+                    Spacer()
+                }
+                .ignoresSafeArea()
+
+                VStack(spacing: 0) {
+                    Spacer()
                     
                     // Record Button
                     Button(action: {
@@ -83,12 +95,12 @@ struct RecordView: View {
                 }
             }
             .simultaneousGesture(
-                DragGesture(minimumDistance: 0)
+                DragGesture(minimumDistance: 0, coordinateSpace: .global)
                     .onChanged { value in
-                        touchLocation = value.location
+                        effectsState.touchLocation = value.location
                     }
                     .onEnded { _ in
-                        touchLocation = .zero
+                        effectsState.touchLocation = .zero
                     }
             )
             .navigationTitle("Record")
@@ -102,6 +114,8 @@ struct RecordView: View {
                 voiceRecorder.requestPermission()
             }
         }
+
+        .background(Color.clear)
     }
     
     func handleAudioRecording() {

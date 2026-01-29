@@ -13,6 +13,10 @@ class VideoAnalyzer: NSObject, ObservableObject {
     private var lastPresenceCheckTime: TimeInterval = 0
     private var recordingStartTime: Date?
     
+    // Smoothing
+    private var recentYaws: [Double] = []
+    private let yawWindowSize = 5
+    
     override init() {
         super.init()
         setupVision()
@@ -27,6 +31,7 @@ class VideoAnalyzer: NSObject, ObservableObject {
     func cleanUp() {
         events.removeAll()
         presenceScores.removeAll()
+        recentYaws.removeAll()
         currentPresence = .absent
     }
     
@@ -37,10 +42,14 @@ class VideoAnalyzer: NSObject, ObservableObject {
     
     func stopAnalysis() -> VideoAnalysisResult {
         // Calculate final scores
-        let avgPresence = presenceScores.isEmpty ? 0.0 : presenceScores.reduce(0, +) / Double(presenceScores.count)
-        // Simplified Gaze Stability (mock calculation based on events count for now)
+        let totalSamples = Double(presenceScores.count)
+        let avgPresence = presenceScores.isEmpty ? 0.0 : presenceScores.reduce(0, +) / totalSamples
+        
+        // Stability based on ratio of 'steady' frames (1.0) vs 'distracted' (0.5) vs 'absent' (0.0)
+        // We can just count distracted events relative to total time
         let distractedCount = events.filter { $0.type == .distracted }.count
-        let stability = max(0.0, 1.0 - (Double(distractedCount) * 0.1))
+        // Rough estimate: reduce stability by 5% for each distraction event
+        let stability = max(0.0, 1.0 - (Double(distractedCount) * 0.05))
         
         return VideoAnalysisResult(
             events: events,
@@ -52,6 +61,8 @@ class VideoAnalyzer: NSObject, ObservableObject {
     private func handleFaceLandmarks(request: VNRequest, error: Error?) {
         guard let results = request.results as? [VNFaceObservation], let result = results.first else {
             // No face found
+            // Clear recent yaws so we don't start with old data when face reappears
+            if !recentYaws.isEmpty { recentYaws.removeAll() }
             updatePresence(.absent)
             return
         }
@@ -59,13 +70,17 @@ class VideoAnalyzer: NSObject, ObservableObject {
         // Face found
         // Analyze Gaze / Pose
         if let landmarks = result.landmarks {
-            // Simple heuristic: Face yaw/roll or eye positions
-            // Vision doesn't give direct gaze, but we can detect if face is turned away
-            // result.yaw is available in newer iOS, or use landmarks
-            
             if let yaw = result.yaw {
-                let yawVal = abs(yaw.doubleValue)
-                if yawVal > 0.5 { // Significant turn
+                let currentYaw = yaw.doubleValue
+                recentYaws.append(currentYaw)
+                if recentYaws.count > yawWindowSize {
+                    recentYaws.removeFirst()
+                }
+                
+                let avgYaw = recentYaws.reduce(0, +) / Double(recentYaws.count)
+                let absYaw = abs(avgYaw)
+                
+                if absYaw > 0.5 { // Significant turn (>~28 degrees)
                      updatePresence(.distracted)
                 } else {
                     updatePresence(.present)
@@ -79,6 +94,7 @@ class VideoAnalyzer: NSObject, ObservableObject {
     }
     
     private func updatePresence(_ newState: PresenceState) {
+        // Debounce slightly on main thread updates if needed, but currentPresence is for UI
         DispatchQueue.main.async {
             self.currentPresence = newState
         }
@@ -86,19 +102,26 @@ class VideoAnalyzer: NSObject, ObservableObject {
         guard let startTime = recordingStartTime else { return }
         let now = Date().timeIntervalSince(startTime)
         
-        // Rate limit events
+        // Rate limit logging/scoring (2Hz)
         if now - lastPresenceCheckTime > 0.5 {
             lastPresenceCheckTime = now
-            presenceScores.append(newState == .absent ? 0.0 : 1.0)
             
-            // Log significant state changes or periodic updates?
-            // Let's log state changes for now
-            if let lastEvent = events.last, lastEvent.type != newState {
-                let description = getDescription(for: newState)
-                events.append(VisualEvent(timestamp: now, type: newState, description: description))
-            } else if events.isEmpty {
-                let description = getDescription(for: newState)
-                events.append(VisualEvent(timestamp: now, type: newState, description: description))
+            // Score: Present=1.0, Distracted=0.5, Absent=0.0
+            var score: Double = 0.0
+            switch newState {
+            case .absent: score = 0.0
+            case .distracted: score = 0.5
+            default: score = 1.0
+            }
+            presenceScores.append(score)
+            
+            // Log significant state changes
+            if let lastEvent = events.last {
+                if lastEvent.type != newState {
+                    events.append(VisualEvent(timestamp: now, type: newState, description: getDescription(for: newState)))
+                }
+            } else {
+                events.append(VisualEvent(timestamp: now, type: newState, description: getDescription(for: newState)))
             }
         }
     }

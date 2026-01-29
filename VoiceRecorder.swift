@@ -156,6 +156,8 @@ class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudi
             if audioPlayer == nil {
                 audioPlayer = try AVAudioPlayer(contentsOf: audioFilename)
                 audioPlayer?.delegate = self
+                audioPlayer?.enableRate = true
+                audioPlayer?.rate = 1.0
                 audioPlayer?.volume = 1.0
                 audioPlayer?.prepareToPlay()
                 duration = audioPlayer?.duration ?? 0
@@ -193,6 +195,11 @@ class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudi
         isPlaying = false
         timer?.invalidate()
         timer = nil
+    }
+    
+    func setRate(_ rate: Float) {
+        audioPlayer?.enableRate = true
+        audioPlayer?.rate = rate
     }
     
     // MARK: - AVAudioRecorderDelegate

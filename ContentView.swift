@@ -6,40 +6,49 @@ struct ContentView: View {
     init() {
         // Tab Bar Appearance
         let appearance = UITabBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor.black
+        appearance.configureWithTransparentBackground()
+        appearance.backgroundColor = UIColor.clear
         
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
     }
 
+    @StateObject var effectsState = GlobalEffectsState()
+
     var body: some View {
-        TabView {
-            // Tab 1: Record (Audio)
-            RecordView(storage: storage)
-                .tabItem {
-                    Label("Voice", systemImage: "mic.fill")
-                }
+        ZStack {
+            // Global Particle Layer - Removed in favor of per-view instances
+            // Color.black.ignoresSafeArea()
+            // ParticleView(amplitude: effectsState.amplitude, touchLocation: effectsState.touchLocation).ignoresSafeArea()
             
-            // Tab 2: Camera
-            CameraRecordView(storage: storage)
-                .tabItem {
-                    Label("Camera", systemImage: "video.fill")
-                }
-            
-            // Tab 3: Library
-            LibraryView(storage: storage)
-                .tabItem {
-                    Label("Library", systemImage: "books.vertical.fill")
-                }
-            
-            // Tab 4: Progress (Analytics)
-            ProgressView(storage: storage)
-                .tabItem {
-                    Label("Progress", systemImage: "chart.bar.fill")
-                }
+            TabView {
+                // Tab 1: Record (Audio)
+                RecordView(storage: storage)
+                    .tabItem {
+                        Label("Voice", systemImage: "mic.fill")
+                    }
+                
+                // Tab 2: Camera
+                CameraRecordView(storage: storage)
+                    .tabItem {
+                        Label("Camera", systemImage: "video.fill")
+                    }
+                
+                // Tab 3: Library
+                LibraryView(storage: storage)
+                    .tabItem {
+                        Label("Library", systemImage: "books.vertical.fill")
+                    }
+                
+                // Tab 4: Progress (Analytics)
+                ProgressView(storage: storage)
+                    .tabItem {
+                        Label("Progress", systemImage: "chart.bar.fill")
+                    }
+            }
+            .accentColor(.red) // Highlight color
         }
-        .accentColor(.red) // Highlight color
         .preferredColorScheme(.dark)
+        .environmentObject(effectsState)
     }
 }

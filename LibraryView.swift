@@ -4,6 +4,7 @@ struct LibraryView: View {
     @ObservedObject var storage: RecordingStorage
     // We need a voiceRecorder instance to pass to PlaybackView for audio playback capability
     @StateObject var playbackVoiceRecorder = VoiceRecorder()
+    @EnvironmentObject var effectsState: GlobalEffectsState
     
     @State private var selectedRecording: Recording?
     @State private var showPlayback = false
@@ -13,7 +14,17 @@ struct LibraryView: View {
     var body: some View {
         NavigationStack {
             ZStack {
+                // Background - Remove solid color to show Global Particles
                 Color.black.ignoresSafeArea()
+                
+                ParticleView(amplitude: effectsState.amplitude, touchLocation: effectsState.touchLocation)
+                    .ignoresSafeArea()
+                
+                // Ensure amplitude is reset when entering library
+                Color.clear
+                    .onAppear {
+                        effectsState.amplitude = 0.0
+                    }
                 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
@@ -71,13 +82,27 @@ struct LibraryView: View {
                         }
                     }
                 }
+                .scrollContentBackground(.hidden)
+                .background(Color.clear)
             }
+
+
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                    .onChanged { value in
+                        effectsState.touchLocation = value.location
+                    }
+                    .onEnded { _ in
+                        effectsState.touchLocation = .zero
+                    }
+            )
             .navigationDestination(isPresented: $showPlayback) {
                 if let recording = selectedRecording {
                     PlaybackView(voiceRecorder: playbackVoiceRecorder, storage: storage, recording: recording)
                 }
             }
         }
+        .background(Color.clear)
         .alert("Delete Recording", isPresented: $showDeleteAlert, presenting: recordingToDelete) { recording in
             Button("Cancel", role: .cancel) { }
                 .tint(.white)

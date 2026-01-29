@@ -1,9 +1,15 @@
 import SwiftUI
 
 struct MotivationalMessageView: View {
+    enum MessageType {
+        case audio
+        case camera
+    }
+    
+    let type: MessageType
     @State private var fullMessage: String = ""
     
-    private let messages = [
+    private let audioMessages = [
         "Ready to Rock Today? 🎸",
         "Time to shine! ✨",
         "Capture your brilliant thoughts! 💡",
@@ -15,6 +21,27 @@ struct MotivationalMessageView: View {
         "Today is a great day! ☀️",
         "Record your genius! ⚡️"
     ]
+    
+    private let cameraMessages = [
+        "Smile for the camera! 📸",
+        "Show your confidence! 💪",
+        "Eyes on the prize! 👀",
+        "You look great! ✨",
+        "Stand tall! 🦒",
+        "Ready for your closeup? 🎬",
+        "Project your presence! 🌟",
+        "Share your vision! 👁️",
+        "Be yourself! 🌈",
+        "Lights, Camera, Action! 🎥"
+    ]
+    
+    init(type: MessageType = .audio) {
+        self.type = type
+    }
+    
+    var messages: [String] {
+        type == .camera ? cameraMessages : audioMessages
+    }
     
     var body: some View {
         HStack(spacing: 4) {

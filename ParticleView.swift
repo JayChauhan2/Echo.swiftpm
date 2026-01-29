@@ -61,7 +61,7 @@ struct ParticleView: View {
         let screenHeight = UIScreen.main.bounds.height
         
         // Increased count for more energy
-        particles = (0..<60).map { _ in
+        particles = (0..<80).map { _ in
             createRandomParticle(screenWidth: screenWidth, screenHeight: screenHeight)
         }
     }
@@ -70,8 +70,8 @@ struct ParticleView: View {
         return Particle(
             x: CGFloat.random(in: 0...screenWidth),
             y: CGFloat.random(in: 0...screenHeight),
-            size: CGFloat.random(in: 10...30), // Larger, softer particles
-            opacity: Double.random(in: 0.3...0.7),
+            size: CGFloat.random(in: 10...30), // Reverted to smaller size
+            opacity: Double.random(in: 0.4...0.8),
             velocityX: CGFloat.random(in: -0.5...0.5),
             velocityY: CGFloat.random(in: -0.5...0.5),
             color: colors.randomElement()!,
@@ -102,7 +102,7 @@ struct ParticleView: View {
                 
                 if distance < interactionRadius {
                     let force = (interactionRadius - distance) / interactionRadius
-                    let repulsionStrength: CGFloat = 5.0 // Adjust strength of repulsion
+                    let repulsionStrength: CGFloat = 8.0 // Adjust strength of repulsion
                     
                     dx += (distanceX / distance) * force * repulsionStrength
                     dy += (distanceY / distance) * force * repulsionStrength

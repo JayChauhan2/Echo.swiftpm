@@ -36,6 +36,16 @@ struct CameraRecordView: View {
                     }
                 }
                 
+                if !cameraManager.isRecording {
+                    VStack {
+                        Spacer()
+                        MotivationalMessageView(type: .camera)
+                            .transition(.opacity)
+                        Spacer()
+                    }
+                    .ignoresSafeArea()
+                }
+
                 VStack(spacing: 0) {
                     Spacer()
                     
