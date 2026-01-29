@@ -81,7 +81,7 @@ struct RecordView: View {
                             
                             Spacer()
                         }
-                        .frame(height: UIScreen.main.bounds.height - 150)
+                        .frame(height: UIScreen.main.bounds.height - 200) // Reduced height to pull up next section
                         
                         // Past Recordings Section - Grid below
                         VStack(alignment: .leading, spacing: 15) {
