@@ -23,14 +23,25 @@ class CameraManager: NSObject, ObservableObject {
     func checkPermission() {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
-            permissionGranted = true
-            setupSession()
+            // Normalize behavior: always dispatch to background for setup
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                DispatchQueue.main.async {
+                    self?.permissionGranted = true
+                }
+                self?.setupSession()
+            }
         case .notDetermined:
             AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
-                DispatchQueue.main.async {
-                    self?.permissionGranted = granted
-                    if granted {
+                if granted {
+                    DispatchQueue.main.async {
+                        self?.permissionGranted = true
+                    }
+                    DispatchQueue.global(qos: .userInitiated).async {
                         self?.setupSession()
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        self?.permissionGranted = false
                     }
                 }
             }
@@ -71,9 +82,8 @@ class CameraManager: NSObject, ObservableObject {
         
         session.commitConfiguration()
         
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            self?.session.startRunning()
-        }
+        // Already on background thread
+        self.session.startRunning()
     }
     
     func startRecording() {
