@@ -10,6 +10,7 @@ struct PlaybackView: View {
     @State private var showDeleteAlert = false
     @State private var isDragging = false
     @State private var scrubbingTime: TimeInterval = 0
+    @State private var hoveredState: CommunicationState?
     
     private func formattedTime(_ time: TimeInterval) -> String {
         let minutes = Int(time) / 60
@@ -123,7 +124,11 @@ struct PlaybackView: View {
                                 let pixelsPerSecond = 20.0 * totalBarWidth
                                 let dragSeconds = Double(-value.translation.width / pixelsPerSecond)
                                 
-                                scrubbingTime = max(0, min(duration, voiceRecorder.currentTime + dragSeconds))
+                                let newTime = max(0, min(duration, voiceRecorder.currentTime + dragSeconds))
+                                scrubbingTime = newTime
+                                
+                                // Update Hover State
+                                hoveredState = getSegmentState(at: newTime, segments: recording.analysis?.segments)
                             }
                             .onEnded { value in
                                 let totalBarWidth = barWidth + spacing
@@ -135,8 +140,22 @@ struct PlaybackView: View {
                                 voiceRecorder.startPlayback()
                                 isDragging = false
                                 scrubbingTime = 0
+                                hoveredState = nil
                             }
                     )
+                }
+                
+                // Tooltip (Floating Pill)
+                if let hoveredState = hoveredState {
+                    Text(hoveredState.rawValue)
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(getColor(for: hoveredState))
+                        .foregroundStyle(.white)
+                        .clipShape(Capsule())
+                        .offset(y: -40) // Position above playhead
                 }
                 
                 // Static Playhead
@@ -273,15 +292,19 @@ struct PlaybackView: View {
     }
     
     private func getSegmentColor(at time: TimeInterval, segments: [AnalysisSegment]?) -> Color {
-        guard let segments = segments else { return .gray }
+        guard let state = getSegmentState(at: time, segments: segments) else { return .gray }
+        return getColor(for: state)
+    }
+    
+    private func getSegmentState(at time: TimeInterval, segments: [AnalysisSegment]?) -> CommunicationState? {
+        guard let segments = segments else { return nil }
         
         for segment in segments {
             if time >= segment.startTime && time <= segment.endTime {
-                return getColor(for: segment.state)
+                return segment.state
             }
         }
-        
-        return .gray // Default
+        return .neutral // Default if no segment found but analyzing? Or nil? Let's say .neutral (Gray)
     }
     
     private func getColor(for state: CommunicationState) -> Color {

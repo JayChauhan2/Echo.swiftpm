@@ -18,6 +18,7 @@ class AudioAnalyzer: NSObject {
         // 3. Segment Analysis & Heuristic Inference (Granular)
         let analysisSegments = analyzeGranularSegments(
             segments: segments,
+            transcription: transcription,
             volumeStability: volumeStability
         )
         
@@ -47,19 +48,37 @@ class AudioAnalyzer: NSObject {
     
     // MARK: - Private Helpers
     
-    private func analyzeGranularSegments(segments: [SFTranscriptionSegment], volumeStability: Double) -> [AnalysisSegment] {
+    private func analyzeGranularSegments(segments: [SFTranscriptionSegment], transcription: String, volumeStability: Double) -> [AnalysisSegment] {
         var analysisSegments: [AnalysisSegment] = []
         var currentPhrase: [SFTranscriptionSegment] = []
+        var lastEndTime: TimeInterval = 0.0
         
         // Filler words list (lowercase for comparison)
         let fillers: Set<String> = ["um", "uh", "hmm", "er", "ah", "like"]
         
+        var searchRange = transcription.startIndex..<transcription.endIndex
+        
         for (index, segment) in segments.enumerated() {
             let word = segment.substring.lowercased().trimmingCharacters(in: .punctuationCharacters)
+            let gap = segment.timestamp - lastEndTime
             
-            // Check for filler word
-            if fillers.contains(word) {
-                // 1. Analyze pending phrase if exists
+            // Search for this word in the transcription to check for preceeding punctuation
+            var followsPunctuation = false
+            if let range = transcription.range(of: segment.substring, options: .caseInsensitive, range: searchRange) {
+                // Check characters before this word (in the gap)
+                let preGap = transcription[searchRange.lowerBound..<range.lowerBound]
+                if preGap.contains(".") || preGap.contains(",") || preGap.contains("?") || preGap.contains("!") || preGap.contains(":") || preGap.contains(";") {
+                    followsPunctuation = true
+                }
+                // Advance search range
+                if range.upperBound < transcription.endIndex {
+                    searchRange = range.upperBound..<transcription.endIndex
+                }
+            }
+            
+            // 1. Check for significant pause/gap
+            if gap > 0.5 {
+                // Analyze pending phrase first
                 if !currentPhrase.isEmpty {
                     if let phraseSegment = analyzePhrase(currentPhrase, volumeStability: volumeStability) {
                         analysisSegments.append(phraseSegment)
@@ -67,29 +86,39 @@ class AudioAnalyzer: NSObject {
                     currentPhrase = []
                 }
                 
-                // 2. Add Hesitant segment for the filler
-                // Add a small buffer to visual width if short
-                let start = segment.timestamp
-                let end = segment.timestamp + segment.duration
-                analysisSegments.append(AnalysisSegment(startTime: start, endTime: end, state: .hesitant))
-                
-                continue
+                // Smart "AI" Decision:
+                // If the gap follows punctuation (sentence break), it is a Natural Pause (Neutral/Gray).
+                // If it does NOT follow punctuation (mid-sentence), it is Hesitant (Orange).
+                if !followsPunctuation {
+                     // Add the gap as a Hesitant segment
+                    analysisSegments.append(AnalysisSegment(startTime: lastEndTime, endTime: segment.timestamp, state: .hesitant))
+                }
+                // Else: Neutral/Gray (implicitly handled by lack of segment)
             }
             
-            // Check for significant pause before this word -> Trigger phrase break
-            if let lastWord = currentPhrase.last {
-                let gap = segment.timestamp - (lastWord.timestamp + lastWord.duration)
-                if gap > 0.45 { // New clause due to pause
+            // 2. Check for explicit filler word
+            if fillers.contains(word) {
+                // Flush pending phrase
+                if !currentPhrase.isEmpty {
                     if let phraseSegment = analyzePhrase(currentPhrase, volumeStability: volumeStability) {
                         analysisSegments.append(phraseSegment)
                     }
                     currentPhrase = []
                 }
+                
+                // Add Hesitant segment for the filler
+                let start = segment.timestamp
+                let end = segment.timestamp + segment.duration
+                analysisSegments.append(AnalysisSegment(startTime: start, endTime: end, state: .hesitant))
+                
+                lastEndTime = end
+                continue
             }
             
             currentPhrase.append(segment)
+            lastEndTime = segment.timestamp + segment.duration
             
-            // If it's the last word, flush
+            // Flush at end
             if index == segments.count - 1 {
                 if let phraseSegment = analyzePhrase(currentPhrase, volumeStability: volumeStability) {
                     analysisSegments.append(phraseSegment)
