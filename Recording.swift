@@ -9,7 +9,11 @@ struct Recording: Codable, Identifiable {
     var analysis: AudioAnalysisResult? // Make mutable to update after analysis
     var analysisError: String? // Store error reason if analysis fails
     
-    init(id: UUID = UUID(), filename: String, date: Date, duration: TimeInterval, samples: [Float] = [], analysis: AudioAnalysisResult? = nil, analysisError: String? = nil) {
+    // Video Support
+    let isVideo: Bool
+    var videoAnalysis: VideoAnalysisResult?
+    
+    init(id: UUID = UUID(), filename: String, date: Date, duration: TimeInterval, samples: [Float] = [], analysis: AudioAnalysisResult? = nil, analysisError: String? = nil, isVideo: Bool = false, videoAnalysis: VideoAnalysisResult? = nil) {
         self.id = id
         self.filename = filename
         self.date = date
@@ -17,5 +21,7 @@ struct Recording: Codable, Identifiable {
         self.samples = samples
         self.analysis = analysis
         self.analysisError = analysisError
+        self.isVideo = isVideo
+        self.videoAnalysis = videoAnalysis
     }
 }
