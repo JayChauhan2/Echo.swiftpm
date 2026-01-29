@@ -8,6 +8,8 @@ struct CameraRecordView: View {
     @State private var showPlayback = false
     @State private var isAnalyzing = false
     @State private var selectedRecording: Recording?
+    @State private var showCountdown = false
+    @State private var countdownNumber = 3
     
     var body: some View {
         NavigationStack {
@@ -47,8 +49,6 @@ struct CameraRecordView: View {
                 }
 
                 VStack(spacing: 0) {
-                    Spacer()
-                    
                     if cameraManager.isRecording {
                         // Camera Feedback Overlay
                         Text(videoAnalyzer.currentPresence.rawValue)
@@ -58,8 +58,10 @@ struct CameraRecordView: View {
                             .background(.ultraThinMaterial)
                             .cornerRadius(20)
                             .foregroundStyle(.white)
-                            .padding(.bottom, 20)
+                            .padding(.top, 20)
                     }
+                    
+                    Spacer()
                     
                     Button(action: {
                         handleCameraRecording()
@@ -111,6 +113,21 @@ struct CameraRecordView: View {
                     }
                     .transition(.opacity)
                     .zIndex(2)
+                }
+                
+                // Countdown Overlay
+                if showCountdown {
+                    ZStack {
+                        Color.black.opacity(0.7).ignoresSafeArea()
+                        Text("\(countdownNumber)")
+                            .font(.system(size: 120, weight: .bold))
+                            .foregroundStyle(.white)
+                            .shadow(color: .red, radius: 20)
+                            .scaleEffect(countdownNumber > 0 ? 1.0 : 0.5)
+                            .opacity(countdownNumber > 0 ? 1.0 : 0.0)
+                    }
+                    .transition(.opacity)
+                    .zIndex(3)
                 }
             }
             .toolbar {
@@ -177,9 +194,23 @@ struct CameraRecordView: View {
                 }
             }
         } else {
-            HapticManager.shared.medium() // Medium haptic when starting
-            videoAnalyzer.startAnalysis()
-            cameraManager.startRecording()
+            // Start countdown before recording
+            Task {
+                withAnimation { showCountdown = true }
+                
+                // Countdown from 3 to 1
+                for i in (1...3).reversed() {
+                    countdownNumber = i
+                    HapticManager.shared.medium() // Haptic for each countdown number
+                    try? await Task.sleep(nanoseconds: 1 * 1_000_000_000)
+                }
+                
+                // Hide countdown and start recording
+                withAnimation { showCountdown = false }
+                HapticManager.shared.heavy() // Heavy haptic when recording actually starts
+                videoAnalyzer.startAnalysis()
+                cameraManager.startRecording()
+            }
         }
     }
 }
