@@ -8,6 +8,8 @@ struct Particle: Identifiable {
     var opacity: Double
     var velocityX: CGFloat
     var velocityY: CGFloat
+    var baseVelocityX: CGFloat
+    var baseVelocityY: CGFloat
     var color: Color
     var blur: CGFloat
 }
@@ -67,13 +69,18 @@ struct ParticleView: View {
     }
     
     private func createRandomParticle(screenWidth: CGFloat, screenHeight: CGFloat) -> Particle {
+        let vx = CGFloat.random(in: -0.5...0.5)
+        let vy = CGFloat.random(in: -0.5...0.5)
+        
         return Particle(
             x: CGFloat.random(in: 0...screenWidth),
             y: CGFloat.random(in: 0...screenHeight),
             size: CGFloat.random(in: 10...30), // Reverted to smaller size
             opacity: Double.random(in: 0.4...0.8),
-            velocityX: CGFloat.random(in: -0.5...0.5),
-            velocityY: CGFloat.random(in: -0.5...0.5),
+            velocityX: vx,
+            velocityY: vy,
+            baseVelocityX: vx,
+            baseVelocityY: vy,
             color: colors.randomElement()!,
             blur: CGFloat.random(in: 2...8) // Variable blur for depth
         )
@@ -87,9 +94,9 @@ struct ParticleView: View {
         let energyFactor = CGFloat(1.0 + (amplitude * 5.0))
         
         for i in particles.indices {
-            // Apply velocity with energy
-            var dx = particles[i].velocityX * energyFactor
-            var dy = particles[i].velocityY * energyFactor
+            // physics parameters
+            let damping: CGFloat = 0.95 // How fast it slows down (0.9 to 0.99)
+            let returnStrength: CGFloat = 0.02 // How fast it returns to base velocity
             
             // Interaction with touch
             if touchLocation != .zero {
@@ -98,20 +105,29 @@ struct ParticleView: View {
                 let distanceY = particleCenter.y - touchLocation.y
                 let distance = sqrt(distanceX * distanceX + distanceY * distanceY)
                 
-                let interactionRadius: CGFloat = 150.0
+                let interactionRadius: CGFloat = 200.0 // Larger radius for "fly away" feel
                 
                 if distance < interactionRadius {
                     let force = (interactionRadius - distance) / interactionRadius
-                    let repulsionStrength: CGFloat = 8.0 // Adjust strength of repulsion
+                    // Impulse strength - needs to be high to overcome inertia
+                    let pushStrength: CGFloat = 2.0 
                     
-                    dx += (distanceX / distance) * force * repulsionStrength
-                    dy += (distanceY / distance) * force * repulsionStrength
+                    // Add impulse to current velocity
+                    particles[i].velocityX += (distanceX / distance) * force * pushStrength
+                    particles[i].velocityY += (distanceY / distance) * force * pushStrength
                 }
             }
             
-            particles[i].x += dx
-            particles[i].y += dy
+            // Move particle
+            // Base movement modulated by energy + accumulated momentum
+            particles[i].x += particles[i].velocityX * energyFactor
+            particles[i].y += particles[i].velocityY * energyFactor
             
+            // Damping / Return to normal
+            // Slowly interpolate current velocity back to base velocity
+            particles[i].velocityX = (particles[i].velocityX * damping) + (particles[i].baseVelocityX * returnStrength)
+            particles[i].velocityY = (particles[i].velocityY * damping) + (particles[i].baseVelocityY * returnStrength)
+
             // Wrap around screen edges
             let margin: CGFloat = 50
             if particles[i].x < -margin {
