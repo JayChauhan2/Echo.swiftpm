@@ -82,6 +82,8 @@ struct PracticeGoalBox: View {
     let minutes: Int
     let goal: Int
     
+    @State private var animatedProgress: CGFloat = 0.0
+    
     var progress: Double {
         return min(Double(minutes) / Double(goal), 1.0)
     }
@@ -107,13 +109,12 @@ struct PracticeGoalBox: View {
                 
                 // Progress Track
                 Circle()
-                    .trim(from: 0.0, to: 0.5 * progress)
+                    .trim(from: 0.0, to: 0.5 * animatedProgress)
                     .stroke(
                         LinearGradient(colors: [.blue, .purple], startPoint: .leading, endPoint: .trailing),
                         style: StrokeStyle(lineWidth: 12, lineCap: .round)
                     )
                     .rotationEffect(.degrees(180))
-                    .animation(.easeOut(duration: 1.0), value: progress)
                 
                 VStack(spacing: 2) {
                     Text("\(minutes) / \(goal)")
@@ -126,8 +127,13 @@ struct PracticeGoalBox: View {
                 }
                 .offset(y: -10)
             }
-            .frame(height: 100) // Constrain height for semi-circle aspect
-            .offset(y: 20) // Push down slightly to align
+            .frame(height: 100)
+            .offset(y: 20)
+            .onAppear {
+                withAnimation(.easeOut(duration: 1.5)) {
+                    animatedProgress = progress
+                }
+            }
             
             Spacer()
         }
@@ -146,6 +152,8 @@ struct ConfidenceSnapshotBox: View {
     let score: Int
     let currentChange: Int
     
+    @State private var animatedScore: Double = 0
+    
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
@@ -159,7 +167,7 @@ struct ConfidenceSnapshotBox: View {
             
             Spacer()
             
-            Text("\(score)%")
+            AnimatableNumberText(value: animatedScore, suffix: "%")
                 .font(.system(size: 48, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
             
@@ -170,7 +178,6 @@ struct ConfidenceSnapshotBox: View {
                     Text("\(currentChange)% this week")
                         .font(.caption)
                 } else {
-                    // Don't show negative red states, show "Steady" or neutral
                      Text("consistent")
                         .font(.caption)
                 }
@@ -186,12 +193,33 @@ struct ConfidenceSnapshotBox: View {
             RoundedRectangle(cornerRadius: 24)
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
+        .onAppear {
+            withAnimation(.easeOut(duration: 2.0)) {
+                animatedScore = Double(score)
+            }
+        }
+    }
+}
+
+// MARK: - Helper: Animatable Number Text
+struct AnimatableNumberText: View, Animatable {
+    var value: Double
+    var suffix: String
+    
+    var animatableData: Double {
+        get { value }
+        set { value = newValue }
+    }
+    
+    var body: some View {
+        Text("\(Int(value))\(suffix)")
     }
 }
 
 // MARK: - Box 3: Confidence Chart
 struct ConfidenceChartBox: View {
     let trend: [Double]
+    @State private var drawProgress: CGFloat = 0.0
     
     var body: some View {
         VStack(alignment: .leading) {
@@ -228,10 +256,16 @@ struct ConfidenceChartBox: View {
                             }
                         }
                     }
+                    .trim(from: 0, to: drawProgress) // Animate from 0 to 1
                     .stroke(
                         LinearGradient(colors: [.yellow, .orange], startPoint: .leading, endPoint: .trailing),
                         style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round)
                     )
+                    .onAppear {
+                        withAnimation(.easeOut(duration: 2.0)) {
+                            drawProgress = 1.0
+                        }
+                    }
                 }
                 .padding(.vertical, 8)
                 .padding(.horizontal, 4)
@@ -250,6 +284,7 @@ struct ConfidenceChartBox: View {
 // MARK: - Box 4: Clarity
 struct ClarityBox: View {
     let score: Int
+    @State private var animatedScore: Double = 0
     
     var body: some View {
         VStack(alignment: .leading) {
@@ -266,7 +301,7 @@ struct ClarityBox: View {
             
             // Simple Bar
             VStack(alignment: .leading, spacing: 5) {
-                Text("\(score)%")
+                AnimatableNumberText(value: animatedScore, suffix: "%")
                     .font(.title)
                     .fontWeight(.bold)
                     .foregroundStyle(.white)
@@ -295,6 +330,11 @@ struct ClarityBox: View {
             RoundedRectangle(cornerRadius: 24)
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
+        .onAppear {
+            withAnimation(.easeOut(duration: 1.5)) {
+                animatedScore = Double(score)
+            }
+        }
     }
 }
 
