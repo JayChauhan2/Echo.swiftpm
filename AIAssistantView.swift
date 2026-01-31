@@ -71,7 +71,7 @@ struct AIAssistantView: View {
                     Button(action: sendMessage) {
                         Image(systemName: "arrow.up.circle.fill")
                             .font(.system(size: 32))
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(.red)
                     }
                     .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
@@ -192,7 +192,7 @@ struct ChatBubble: View {
                 Spacer()
                 Text(message.content)
                     .padding()
-                    .background(Color.blue)
+                    .background(Color.red)
                     .foregroundColor(.white)
                     .cornerRadius(16)
                     .containerRelativeFrame(.horizontal, count: 5, span: 4, spacing: 0, alignment: .trailing)
