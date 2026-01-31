@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct RecordingCard: View {
+    @EnvironmentObject var languageManager: LanguageManager
     let recording: Recording
     let index: Int
     
@@ -37,6 +38,7 @@ struct RecordingCard: View {
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d, h:mm a" // e.g., "Jan 29, 2:30 PM"
+        formatter.locale = languageManager.currentLocale
         return formatter.string(from: date)
     }
     

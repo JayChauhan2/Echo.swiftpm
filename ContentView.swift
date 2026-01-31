@@ -14,6 +14,7 @@ struct ContentView: View {
     }
 
     @StateObject var effectsState = GlobalEffectsState()
+    @StateObject var languageManager = LanguageManager.shared
 
     var body: some View {
         ZStack {
@@ -25,30 +26,37 @@ struct ContentView: View {
                 // Tab 1: Record (Audio)
                 RecordView(storage: storage)
                     .tabItem {
-                        Label("Voice", systemImage: "mic.fill")
+                        Label(languageManager.t("Voice"), systemImage: "mic.fill")
                     }
                 
                 // Tab 2: Camera
                 CameraRecordView(storage: storage)
                     .tabItem {
-                        Label("Camera", systemImage: "video.fill")
+                        Label(languageManager.t("Camera"), systemImage: "video.fill")
                     }
                 
                 // Tab 3: Library
                 LibraryView(storage: storage)
                     .tabItem {
-                        Label("Library", systemImage: "books.vertical.fill")
+                        Label(languageManager.t("Library"), systemImage: "books.vertical.fill")
                     }
                 
                 // Tab 4: Progress (Analytics)
                 ProgressView(storage: storage)
                     .tabItem {
-                        Label("Progress", systemImage: "chart.bar.fill")
+                        Label(languageManager.t("Progress"), systemImage: "chart.bar.fill")
+                    }
+                
+                // Tab 5: Settings
+                SettingsView()
+                    .tabItem {
+                        Label(languageManager.t("Settings"), systemImage: "ellipsis.circle.fill")
                     }
             }
             .accentColor(.red) // Highlight color
         }
         .preferredColorScheme(.dark)
         .environmentObject(effectsState)
+        .environmentObject(languageManager)
     }
 }

@@ -3,6 +3,7 @@ import Charts // Try using Charts framework, or fallback to Path if unavailable 
 
 struct ProgressView: View {
     @StateObject var viewModel: ProgressViewModel
+    @EnvironmentObject var languageManager: LanguageManager
     
     init(storage: RecordingStorage) {
         _viewModel = StateObject(wrappedValue: ProgressViewModel(storage: storage))
@@ -13,12 +14,12 @@ struct ProgressView: View {
             VStack(spacing: 24) {
                 // Header
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Your Progress 🚀")
+                    Text(languageManager.t("Your Progress 🚀"))
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundStyle(.red)
                     
-                    Text("Practice, reflection, and growth over time")
+                    Text(languageManager.t("Practice, reflection, and growth over time"))
                         .font(.body)
                         .foregroundStyle(.gray)
                 }
@@ -60,7 +61,7 @@ struct ProgressView: View {
                     
                     // Optional: Words Practiced
                     HStack {
-                        Text("Words practiced total: \(viewModel.wordsPracticed)")
+                        Text("\(languageManager.t("Words practiced total")): \(viewModel.wordsPracticed)")
                             .font(.caption)
                             .foregroundStyle(.gray)
                     }
@@ -77,8 +78,8 @@ struct ProgressView: View {
     }
 }
 
-// MARK: - Box 1: Practice Goal (Semi Circle)
 struct PracticeGoalBox: View {
+    @EnvironmentObject var languageManager: LanguageManager
     let minutes: Int
     let goal: Int
     
@@ -91,7 +92,7 @@ struct PracticeGoalBox: View {
     var body: some View {
         VStack {
             HStack {
-                Text("Daily Goal")
+                Text(languageManager.t("Daily Goal"))
                     .font(.headline)
                     .foregroundStyle(.white.opacity(0.8))
                 Spacer()
@@ -121,7 +122,7 @@ struct PracticeGoalBox: View {
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundStyle(.white)
-                    Text("min today")
+                    Text(languageManager.t("min today"))
                         .font(.caption)
                         .foregroundStyle(.gray)
                 }
@@ -147,8 +148,8 @@ struct PracticeGoalBox: View {
     }
 }
 
-// MARK: - Box 2: Confidence Snapshot
 struct ConfidenceSnapshotBox: View {
+    @EnvironmentObject var languageManager: LanguageManager
     let score: Int
     let currentChange: Int
     
@@ -157,7 +158,7 @@ struct ConfidenceSnapshotBox: View {
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
-                Text("Confidence")
+                Text(languageManager.t("Confidence"))
                     .font(.headline)
                     .foregroundStyle(.white.opacity(0.8))
                 Spacer()
@@ -175,10 +176,10 @@ struct ConfidenceSnapshotBox: View {
                 if currentChange >= 0 {
                     Image(systemName: "arrow.up.right")
                         .font(.caption)
-                    Text("\(currentChange)% this week")
+                    Text("\(currentChange)% \(languageManager.t("this week"))")
                         .font(.caption)
                 } else {
-                     Text("consistent")
+                     Text(languageManager.t("consistent"))
                         .font(.caption)
                 }
             }
@@ -218,18 +219,19 @@ struct AnimatableNumberText: View, Animatable {
 
 // MARK: - Box 3: Confidence Chart
 struct ConfidenceChartBox: View {
+    @EnvironmentObject var languageManager: LanguageManager
     let trend: [Double]
     @State private var drawProgress: CGFloat = 0.0
     
     var body: some View {
         VStack(alignment: .leading) {
-            Text("Confidence Over Time")
+            Text(languageManager.t("Confidence Over Time"))
                 .font(.headline)
                 .foregroundStyle(.white.opacity(0.8))
             
             if trend.isEmpty {
                 Spacer()
-                Text("Start recording to see your growth")
+                Text(languageManager.t("Start recording to see your growth"))
                     .font(.subheadline)
                     .foregroundStyle(.gray)
                     .frame(maxWidth: .infinity)
@@ -283,13 +285,14 @@ struct ConfidenceChartBox: View {
 
 // MARK: - Box 4: Clarity
 struct ClarityBox: View {
+    @EnvironmentObject var languageManager: LanguageManager
     let score: Int
     @State private var animatedScore: Double = 0
     
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
-                Text("Clarity")
+                Text(languageManager.t("Clarity"))
                     .font(.headline)
                     .foregroundStyle(.white.opacity(0.8))
                 Spacer()
@@ -306,7 +309,9 @@ struct ClarityBox: View {
                     .fontWeight(.bold)
                     .foregroundStyle(.white)
                 
-                Text(score > 80 ? "Crystal clear" : "Good effort")
+                    .foregroundStyle(.white)
+                
+                Text(score > 80 ? languageManager.t("Crystal clear") : languageManager.t("Good effort"))
                     .font(.caption)
                     .foregroundStyle(.gray)
                 
@@ -340,6 +345,7 @@ struct ClarityBox: View {
 
 // MARK: - Box 5: Hesitation
 struct HesitationBox: View {
+    @EnvironmentObject var languageManager: LanguageManager
     let status: String
     
     var body: some View {
@@ -362,7 +368,7 @@ struct HesitationBox: View {
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
             
-            Text("Flow state")
+            Text(languageManager.t("Flow state"))
                .font(.caption)
                .foregroundStyle(.gray)
             

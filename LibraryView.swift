@@ -5,6 +5,7 @@ struct LibraryView: View {
     // We need a voiceRecorder instance to pass to PlaybackView for audio playback capability
     @StateObject var playbackVoiceRecorder = VoiceRecorder()
     @EnvironmentObject var effectsState: GlobalEffectsState
+    @EnvironmentObject var languageManager: LanguageManager
     
     @State private var selectedRecording: Recording?
     @State private var showPlayback = false
@@ -28,7 +29,7 @@ struct LibraryView: View {
                 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        Text("Library")
+                        Text(languageManager.t("Library"))
                             .font(.largeTitle)
                             .fontWeight(.bold)
                             .foregroundStyle(.red)
@@ -41,11 +42,11 @@ struct LibraryView: View {
                                     .font(.system(size: 60))
                                     .foregroundStyle(.gray.opacity(0.5))
                                 
-                                Text("Your library is empty")
+                                Text(languageManager.t("Your library is empty"))
                                     .font(.title3)
                                     .foregroundStyle(.gray)
                                 
-                                Text("Recordings you save will appear here")
+                                Text(languageManager.t("Recordings you save will appear here"))
                                     .font(.subheadline)
                                     .foregroundStyle(.gray.opacity(0.8))
                             }
@@ -74,7 +75,7 @@ struct LibraryView: View {
                                             recordingToDelete = recording
                                             showDeleteAlert = true
                                         } label: {
-                                            Label("Delete", systemImage: "trash")
+                                            Label(languageManager.t("Delete"), systemImage: "trash")
                                         }
                                     }
                                 }
@@ -105,24 +106,25 @@ struct LibraryView: View {
             }
         }
         .background(Color.clear)
-        .alert("Delete Recording", isPresented: $showDeleteAlert, presenting: recordingToDelete) { recording in
-            Button("Cancel", role: .cancel) { 
+        .alert(languageManager.t("Delete Recording"), isPresented: $showDeleteAlert, presenting: recordingToDelete) { recording in
+            Button(languageManager.t("Cancel"), role: .cancel) { 
                 HapticManager.shared.light() // Light haptic for cancel
             }
                 .tint(.white)
-            Button("Delete", role: .destructive) {
+            Button(languageManager.t("Delete"), role: .destructive) {
                 HapticManager.shared.error() // Error haptic for deletion
                 storage.deleteRecording(recording)
             }
             .tint(.red)
         } message: { recording in
-            Text("Are you sure you want to delete \"\(getRecordingName(recording))\"?")
+            Text("Are you sure you want to delete \"\(getRecordingName(recording))\"?") // Keeping complex string partial for now
         }
     }
     
     private func getRecordingName(_ recording: Recording) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d, h:mm a" // e.g., "Jan 29, 2:30 PM"
+        formatter.locale = languageManager.currentLocale
         return formatter.string(from: recording.date)
     }
 }

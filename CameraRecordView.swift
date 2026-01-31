@@ -4,6 +4,7 @@ struct CameraRecordView: View {
     @StateObject var cameraManager = CameraManager()
     @StateObject var videoAnalyzer = VideoAnalyzer()
     @ObservedObject var storage: RecordingStorage
+    @EnvironmentObject var languageManager: LanguageManager
     
     @State private var showPlayback = false
     @State private var isAnalyzing = false
@@ -28,10 +29,10 @@ struct CameraRecordView: View {
                             .font(.system(size: 50))
                             .foregroundStyle(.gray)
                             .padding()
-                        Text("Camera access required")
+                        Text(languageManager.t("Camera access required"))
                             .font(.headline)
                             .foregroundStyle(.gray)
-                        Button("Open Settings") {
+                        Button(languageManager.t("Open Settings")) {
                             // Link to settings would go here
                         }
                         .padding()
@@ -87,7 +88,7 @@ struct CameraRecordView: View {
                         }
                     }
                     
-                    Text(cameraManager.isRecording ? "Recording Presence..." : "Tap to record")
+                    Text(cameraManager.isRecording ? languageManager.t("Recording Presence...") : languageManager.t("Tap to record"))
                         .font(.headline)
                         .padding()
                         .foregroundStyle(.white)
@@ -104,7 +105,7 @@ struct CameraRecordView: View {
                             AnalysisLoadingView()
                                 .frame(width: 200, height: 200)
                             
-                            Text("Analyzing Presence...")
+                            Text(languageManager.t("Analyzing Presence..."))
                                 .font(.title3)
                                 .fontWeight(.medium)
                                 .foregroundStyle(.white)
@@ -132,7 +133,7 @@ struct CameraRecordView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("Camera")
+                    Text(languageManager.t("Camera"))
                         .font(.headline)
                         .fontWeight(.bold)
                         .foregroundStyle(.red)

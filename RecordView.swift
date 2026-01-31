@@ -4,6 +4,7 @@ struct RecordView: View {
     @StateObject var voiceRecorder = VoiceRecorder()
     @ObservedObject var storage: RecordingStorage
     @EnvironmentObject var effectsState: GlobalEffectsState
+    @EnvironmentObject var languageManager: LanguageManager
     
     @State private var showPlayback = false
     @State private var isAnalyzing = false
@@ -60,7 +61,7 @@ struct RecordView: View {
                             .foregroundColor(.red)
                     }
                     
-                    Text(voiceRecorder.isRecording ? "Recording..." : "Tap to record")
+                    Text(voiceRecorder.isRecording ? languageManager.t("Recording...") : languageManager.t("Tap to record"))
                         .font(.headline)
                         .padding()
                         .foregroundStyle(.gray)
@@ -83,7 +84,7 @@ struct RecordView: View {
                             AnalysisLoadingView()
                                 .frame(width: 200, height: 200)
                             
-                            Text("Analyzing Audio...")
+                            Text(languageManager.t("Analyzing Audio..."))
                                 .font(.title3)
                                 .fontWeight(.medium)
                                 .foregroundStyle(.white)
@@ -105,7 +106,7 @@ struct RecordView: View {
             )
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("Voice")
+                    Text(languageManager.t("Voice"))
                         .font(.headline)
                         .fontWeight(.bold)
                         .foregroundStyle(.red)

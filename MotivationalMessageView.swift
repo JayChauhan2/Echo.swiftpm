@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct MotivationalMessageView: View {
+    @EnvironmentObject var languageManager: LanguageManager
     enum MessageType {
         case audio
         case camera
@@ -67,8 +68,9 @@ struct MotivationalMessageView: View {
     
     var textPart: String {
         guard !fullMessage.isEmpty else { return "" }
-        // Dropping the last character (emoji)
-        return String(fullMessage.dropLast())
+        // Dropping the last character (emoji) and translating using trimmed text as key
+        let text = String(fullMessage.dropLast()).trimmingCharacters(in: .whitespaces)
+        return languageManager.t(text)
     }
     
     var emojiPart: String {
