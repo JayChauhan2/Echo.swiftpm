@@ -8,7 +8,7 @@ class ProgressViewModel: ObservableObject {
     @Published var currentConfidence: Int = 0
     @Published var confidenceChange: Int = 0 // Percentage change
     @Published var clarityScore: Int = 0
-    @Published var hesitationScore: String = "Stable" // "↓ 12%", "Stable", etc.
+    @Published var hesitationScore: String = LanguageManager.shared.t("Stable") // "↓ 12%", "Stable", etc.
     @Published var wordsPracticed: Int = 0
     @Published var wordCountChange: Int = 0
     
@@ -106,30 +106,30 @@ class ProgressViewModel: ObservableObject {
                         // Positive improvement means FEWER pauses
                         let percent = Int(improvement * 100)
                         if percent > 0 {
-                            hesitationScore = "↓ \(percent)% this week"
+                            hesitationScore = "↓ \(percent)% \(LanguageManager.shared.t("this week"))"
                         } else if percent < 0 {
-                            hesitationScore = "↑ \(abs(percent))% this week"
+                            hesitationScore = "↑ \(abs(percent))% \(LanguageManager.shared.t("this week"))"
                         } else {
-                            hesitationScore = "Stable this week"
+                            hesitationScore = "\(LanguageManager.shared.t("Stable")) \(LanguageManager.shared.t("this week"))"
                         }
                     } else {
-                        hesitationScore = "Analyzing..."
+                        hesitationScore = LanguageManager.shared.t("Analyzing...")
                     }
                 } else {
                     // No previous week data
                     if avgPauses < 5 {
-                        hesitationScore = "Very few pauses"
+                        hesitationScore = LanguageManager.shared.t("Very few pauses")
                     } else if avgPauses < 12 {
-                        hesitationScore = "Normal flow"
+                        hesitationScore = LanguageManager.shared.t("Normal flow")
                     } else {
-                        hesitationScore = "High pauses"
+                        hesitationScore = LanguageManager.shared.t("High pauses")
                     }
                 }
             } else {
-                hesitationScore = "No analysis yet"
+                hesitationScore = LanguageManager.shared.t("No analysis yet")
             }
         } else {
-            hesitationScore = "No data this week"
+            hesitationScore = LanguageManager.shared.t("No data this week")
         }
         
         // 5. Words Practiced

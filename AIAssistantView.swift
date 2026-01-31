@@ -78,11 +78,11 @@ struct AIAssistantView: View {
                 .padding()
                 .background(Color(.systemBackground))
             }
-            .navigationTitle("Echo Assistant")
+            .navigationTitle(languageManager.t("Echo Assistant"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
+                    Button(languageManager.t("Done")) {
                         dismiss()
                     }
                 }
@@ -125,42 +125,49 @@ struct AIAssistantView: View {
     func generateResponse(for query: String) -> String {
         let lowerQuery = query.lowercased()
         
-        // Simple Intent Matching based on "stats" context
+        // Simple Intent Matching based on "stats" context (English + Localized)
         
-        if lowerQuery.contains("confidence") {
+        let confidenceKeys = ["confidence", languageManager.t("Confidence").lowercased()]
+        if confidenceKeys.contains(where: { lowerQuery.contains($0) }) {
             let changeStr: String
             if progressViewModel.confidenceChange > 0 {
-                changeStr = "improving by \(progressViewModel.confidenceChange)% this week"
+                changeStr = "\(languageManager.t("improving by")) \(progressViewModel.confidenceChange)% \(languageManager.t("this week"))"
             } else if progressViewModel.confidenceChange < 0 {
-                changeStr = "down by \(abs(progressViewModel.confidenceChange))% this week"
+                changeStr = "\(languageManager.t("down by")) \(abs(progressViewModel.confidenceChange))% \(languageManager.t("this week"))"
             } else {
-                changeStr = "steady"
+                changeStr = languageManager.t("steady")
             }
-            return "Your current confidence score is \(progressViewModel.currentConfidence)%. You are \(changeStr). Keep practicing to boost your projection!"
+            return "\(languageManager.t("Your current confidence score is")) \(progressViewModel.currentConfidence)%. \(languageManager.t("You are")) \(changeStr). \(languageManager.t("Keep practicing to boost your projection!"))"
         }
         
-        if lowerQuery.contains("practice") || lowerQuery.contains("time") || lowerQuery.contains("day") {
-            return "You've practiced for \(progressViewModel.practiceMinutesToday) minutes today against your goal of \(progressViewModel.practiceGoalMinutes) minutes. Every minute counts!"
+        let practiceKeys = ["practice", "time", "day", "min", languageManager.t("Daily Goal").lowercased()]
+        if practiceKeys.contains(where: { lowerQuery.contains($0) }) {
+            return "\(languageManager.t("You've practiced for")) \(progressViewModel.practiceMinutesToday) \(languageManager.t("minutes today against your goal of")) \(progressViewModel.practiceGoalMinutes) \(languageManager.t("minutes. Every minute counts!"))"
         }
         
-        if lowerQuery.contains("hesitation") || lowerQuery.contains("pause") {
-            return "Regarding hesitations: \(progressViewModel.hesitationScore). Reducing pauses helps with flow state."
+        let hesitationKeys = ["hesitation", "pause", languageManager.t("Hesitation").lowercased()]
+        if hesitationKeys.contains(where: { lowerQuery.contains($0) }) {
+            return "\(languageManager.t("Regarding hesitations:")) \(progressViewModel.hesitationScore). \(languageManager.t("Reducing pauses helps with flow state."))"
         }
         
-        if lowerQuery.contains("word") || lowerQuery.contains("count") {
-            return "You have spoken a total of \(progressViewModel.wordsPracticed) words across all your sessions. That's a lot of practice!"
+        let wordKeys = ["word", "count", languageManager.t("Words practiced total").lowercased()]
+        if wordKeys.contains(where: { lowerQuery.contains($0) }) {
+            return "\(languageManager.t("You have spoken a total of")) \(progressViewModel.wordsPracticed) \(languageManager.t("words across all your sessions. That's a lot of practice!"))"
         }
         
-        if lowerQuery.contains("clarity") {
-            return "Your clarity score is currently \(progressViewModel.clarityScore)%. " + (progressViewModel.clarityScore > 80 ? "You're speaking very clearly!" : "Try to articulate more precisely.")
+        let clarityKeys = ["clarity", languageManager.t("Clarity").lowercased()]
+        if clarityKeys.contains(where: { lowerQuery.contains($0) }) {
+            let advice = progressViewModel.clarityScore > 80 ? languageManager.t("You're speaking very clearly!") : languageManager.t("Try to articulate more precisely.")
+            return "\(languageManager.t("Your clarity score is currently")) \(progressViewModel.clarityScore)%. \(advice)"
         }
         
-        if lowerQuery.contains("progress") || lowerQuery.contains("stats") || lowerQuery.contains("summary") {
-            return "Here is your summary:\n• Confidence: \(progressViewModel.currentConfidence)%\n• Today's Practice: \(progressViewModel.practiceMinutesToday) min\n• Hesitation: \(progressViewModel.hesitationScore)\n\nYou're doing great!"
+        let progressKeys = ["progress", "stats", "summary", languageManager.t("Progress").lowercased(), languageManager.t("Your Progress 🚀").lowercased()]
+        if progressKeys.contains(where: { lowerQuery.contains($0) }) {
+            return "\(languageManager.t("Here is your summary:"))\n• \(languageManager.t("Confidence")): \(progressViewModel.currentConfidence)%\n• \(languageManager.t("Today's Practice:")) \(progressViewModel.practiceMinutesToday) min\n• \(languageManager.t("Hesitation:")) \(progressViewModel.hesitationScore)\n\n\(languageManager.t("You're doing great!"))"
         }
         
         // Default
-        return "I can help you analyze your speaking progress. Try asking: \"How is my confidence?\" or \"How much have I practiced today?\""
+        return languageManager.t("I can help you analyze your speaking progress. Try asking: \"How is my confidence?\" or \"How much have I practiced today?\"")
     }
 }
 
