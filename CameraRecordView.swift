@@ -168,12 +168,22 @@ struct CameraRecordView: View {
                 try? await Task.sleep(nanoseconds: 1 * 1_000_000_000)
                 
                 if let url = cameraManager.outputFileURL {
-                    // Create Video Recording Object
+                    // 1. Run Audio Analysis on the video file (extracts audio track)
+                    var audioAnalysis: AudioAnalysisResult?
+                    do {
+                       let analyzer = AudioAnalyzer()
+                       audioAnalysis = try await analyzer.analyze(url: url)
+                    } catch {
+                        print("Audio analysis for video failed: \(error)")
+                    }
+
+                    // 2. Create Video Recording Object with BOTH analyses
                     let recording = Recording(
                         filename: url.lastPathComponent,
                         date: Date(),
                         duration: cameraManager.recordedDuration,
-                        samples: [], // No audio waveform
+                        samples: [], // No audio waveform visualization for video preview in list yet
+                        analysis: audioAnalysis, // <--- Store Audio Intelligence
                         isVideo: true,
                         videoAnalysis: videoAnalysis
                     )

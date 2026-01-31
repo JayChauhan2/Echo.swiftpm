@@ -96,54 +96,90 @@ struct VideoPlaybackView: View {
                 }
             }
             
-            // Timeline
-            VStack(alignment: .leading, spacing: 5) {
-                Text("Presence Timeline")
+            // Smart Timeline
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Analysis Timeline")
                     .font(.caption)
+                    .fontWeight(.bold)
                     .foregroundStyle(.gray)
                     .padding(.horizontal)
                 
                 GeometryReader { geometry in
-                     ZStack(alignment: .leading) {
-                         // Background Track
-                         RoundedRectangle(cornerRadius: 4)
-                             .fill(Color.gray.opacity(0.2))
-                             .frame(height: 20)
-                         
-                         // Events
-                         if let analysis = recording.videoAnalysis {
-                             ForEach(analysis.events) { event in
-                                 let startX = CGFloat(event.timestamp / recording.duration) * geometry.size.width
-                                 let markerWidth: CGFloat = 4
-                                 
-                                 Rectangle()
-                                     .fill(getPresenceColor(event.type))
-                                     .frame(width: markerWidth, height: 20)
-                                     .position(x: startX, y: 10)
-                             }
-                         }
-                         
-                         // Playhead
-                         Rectangle()
-                             .fill(Color.white)
-                             .frame(width: 2, height: 20)
-                             .position(x: CGFloat(currentTime / recording.duration) * geometry.size.width, y: 10)
-                     }
-                     .contentShape(Rectangle())
-                     .gesture(
-                         DragGesture(minimumDistance: 0)
-                             .onChanged { value in
-                                 let fraction = value.location.x / geometry.size.width
-                                 let time = Double(max(0, min(1, fraction))) * recording.duration
-                                 player?.seek(to: CMTime(seconds: time, preferredTimescale: 600))
-                                 currentTime = time
-                             }
-                     )
+                    ZStack(alignment: .leading) {
+                        // Background
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.gray.opacity(0.15))
+                        
+                        VStack(spacing: 2) {
+                            // Lane 1: Audio Confidence (Green/Orange)
+                            if let audio = recording.analysis {
+                                TimelineLane(duration: recording.duration, segments: audio.segments, colorMap: { state in
+                                    switch state {
+                                    case .confident: return .green
+                                    case .hesitant: return .orange
+                                    default: return .gray.opacity(0.3)
+                                    }
+                                })
+                            }
+                            
+                            // Lane 2: Gaze (Blue/Clear)
+                            if let video = recording.videoAnalysis {
+                                TimelineLane(duration: recording.duration, events: video.events.filter { $0.type == .distracted }, baseColor: .red)
+                            }
+                            
+                            // Lane 3: Movement (Yellow/Clear)
+                            if let video = recording.videoAnalysis {
+                                TimelineLane(duration: recording.duration, events: video.events.filter { $0.type == .fidgeting }, baseColor: .yellow)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                        
+                        // Playhead
+                        Rectangle()
+                            .fill(Color.white)
+                            .frame(width: 2)
+                            .padding(.vertical, -4) // EXTEND past lanes
+                            .position(x: CGFloat(currentTime / recording.duration) * geometry.size.width, y: 15) // Approximate center
+                    }
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                let fraction = value.location.x / geometry.size.width
+                                let time = Double(max(0, min(1, fraction))) * recording.duration
+                                player?.seek(to: CMTime(seconds: time, preferredTimescale: 600))
+                                currentTime = time
+                            }
+                    )
                 }
-                .frame(height: 20)
+                .frame(height: 40) // Taller for lanes
                 .padding(.horizontal)
             }
             .padding(.top, 10)
+            
+            // Insight Cards (Cross-Modal)
+            if let video = recording.videoAnalysis, let audio = recording.analysis {
+                let crossModalInsights = generateCrossModalInsights(video: video, audio: audio)
+                if !crossModalInsights.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(crossModalInsights, id: \.self) { insight in
+                                HStack {
+                                    Image(systemName: "lightbulb.fill")
+                                        .foregroundStyle(.yellow)
+                                    Text(insight)
+                                        .font(.caption)
+                                        .foregroundStyle(.white)
+                                }
+                                .padding(8)
+                                .background(Color.white.opacity(0.1))
+                                .cornerRadius(8)
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    .padding(.bottom, 8)
+                }
+            }
             
             // Speed Control & Analysis Summary
             VStack {
@@ -169,14 +205,41 @@ struct VideoPlaybackView: View {
                  .padding(.horizontal)
                  
                  if let analysis = recording.videoAnalysis {
-                     HStack(spacing: 20) {
-                         StatusValue(label: "Presence Score", value: String(format: "%.0f%%", analysis.presenceScore * 100))
-                         StatusValue(label: "Gaze Stability", value: String(format: "%.0f%%", analysis.gazeStabilityScore * 100))
+                     // Detailed Metrics Grid
+                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                         // 1. Gaze
+                         MetricCard(
+                             title: "Eye Contact",
+                             value: String(format: "%.0f%%", (analysis.gaze?.engagementRatio ?? 0) * 100),
+                             icon: "eye.fill",
+                             color: .blue
+                         )
+                         
+                         // 2. Movement
+                         MetricCard(
+                             title: "Stillness",
+                             value: String(format: "%.0f%%", (analysis.movement?.stillnessScore ?? 0) * 100),
+                             icon: "figure.stand",
+                             color: (analysis.movement?.stillnessScore ?? 0) > 0.7 ? .green : .orange
+                         )
+                         
+                         // 3. Expressions
+                         MetricCard(
+                             title: "Smiles",
+                             value: "\(analysis.expression?.smileCount ?? 0)",
+                             icon: "mouth",
+                             color: .pink
+                         )
+                         
+                         // 4. Framing
+                         MetricCard(
+                             title: "Framing",
+                             value: (analysis.framing?.isCenteredScore ?? 0) > 0.8 ? "Good" : "Adjust",
+                             icon: "viewfinder",
+                             color: (analysis.framing?.isCenteredScore ?? 0) > 0.8 ? .green : .yellow
+                         )
                      }
                      .padding()
-                     .frame(maxWidth: .infinity)
-                     .background(Color.white.opacity(0.1))
-                     .cornerRadius(12)
                  }
             }
             .padding()
@@ -227,6 +290,9 @@ struct VideoPlaybackView: View {
         case .distracted: return .orange
         case .unsettled: return .yellow
         case .grounded: return .cyan
+        case .smiling: return .pink
+        case .fidgeting: return .yellow
+        case .poorFraming: return .purple
         }
     }
 }
@@ -465,4 +531,116 @@ struct AudioPlaybackView: View {
     mockRecorder.audioSamples = [0.1, 0.3, 0.5, 0.8, 0.4, 0.2, 0.6, 0.9, 0.3]
     
     return PlaybackView(voiceRecorder: mockRecorder, storage: mockStorage, recording: mockRecording)
+}
+
+// MARK: - Smart Playback Helpers
+
+struct TimelineLane: View {
+    let duration: TimeInterval
+    var segments: [AnalysisSegment]? = nil
+    var events: [VisualEvent]? = nil
+    var colorMap: ((CommunicationState) -> Color)? = nil
+    var baseColor: Color = .blue
+    
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                // Audio Segments
+                if let segments = segments, let colorMap = colorMap {
+                    ForEach(segments, id: \.startTime) { segment in
+                        let startX = CGFloat(segment.startTime / duration) * geometry.size.width
+                        let width = CGFloat((segment.endTime - segment.startTime) / duration) * geometry.size.width
+                        
+                        Rectangle()
+                            .fill(colorMap(segment.state))
+                            .frame(width: max(2, width), height: 8)
+                            .cornerRadius(4)
+                            .position(x: startX + width/2, y: 4)
+                    }
+                }
+                
+                // Visual Events
+                if let events = events {
+                    ForEach(events) { event in
+                        let startX = CGFloat(event.timestamp / duration) * geometry.size.width
+                        Rectangle()
+                            .fill(baseColor)
+                            .frame(width: 4, height: 8)
+                            .cornerRadius(2)
+                            .position(x: startX, y: 4)
+                    }
+                }
+            }
+        }
+        .frame(height: 8)
+    }
+}
+
+struct MetricCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundStyle(color)
+                Spacer()
+            }
+            Text(value)
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundStyle(.white)
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.gray)
+        }
+        .padding()
+        .background(Color.white.opacity(0.1))
+        .cornerRadius(12)
+    }
+}
+
+extension VideoPlaybackView {
+    func generateCrossModalInsights(video: VideoAnalysisResult, audio: AudioAnalysisResult) -> [String] {
+        var insights: [String] = []
+        
+        // 1. Hesitation + Distraction
+        // Check if Hesitant segments overlap with Distracted events
+        let hesitantSegments = audio.segments.filter { $0.state == .hesitant }
+        var overlapCount = 0
+        
+        for segment in hesitantSegments {
+            let overlaps = video.events.contains { event in
+                event.type == .distracted && event.timestamp >= segment.startTime && event.timestamp <= segment.endTime
+            }
+            if overlaps { overlapCount += 1 }
+        }
+        
+        if overlapCount > 0 {
+            insights.append("You look away when hesitating.")
+        }
+        
+        // 2. High Fidgeting
+        if (video.movement?.stillnessScore ?? 1.0) < 0.4 {
+            insights.append("High movement detected while speaking.")
+        }
+        
+        // 3. Eye Contact Streak
+        if (video.gaze?.longestStreak ?? 0) > 5.0 {
+            insights.append("Great eye contact streaks!")
+        }
+        
+        // 4. Smile Timing
+        // Check if smile is near start
+        if let firstSmile = video.expression?.smileTimestamps.first, firstSmile < 3.0 {
+            insights.append("Great warm start with a smile.")
+        } else if (video.expression?.smileCount ?? 0) == 0 {
+             insights.append("Try adding a smile for warmth.")
+        }
+        
+        return insights
+    }
 }
