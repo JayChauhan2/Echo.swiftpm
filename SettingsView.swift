@@ -24,7 +24,7 @@ struct SettingsView: View {
                                     Text("\(language.flag) \(language.rawValue)").tag(language)
                                 }
                             }
-                            .pickerStyle(.navigationLink)
+                            .pickerStyle(.menu)
                         } header: {
                             Text(languageManager.t("App Language"))
                                 .foregroundStyle(.gray)
