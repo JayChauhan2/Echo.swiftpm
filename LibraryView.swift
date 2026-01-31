@@ -11,6 +11,7 @@ struct LibraryView: View {
     @State private var showPlayback = false
     @State private var recordingToDelete: Recording?
     @State private var showDeleteAlert = false
+    @State private var showAI = false
     
     var body: some View {
         NavigationStack {
@@ -29,12 +30,28 @@ struct LibraryView: View {
                 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        Text(languageManager.t("Library"))
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.red)
-                            .padding(.top)
-                            .padding(.horizontal)
+                        HStack {
+                            Text(languageManager.t("Library"))
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.red)
+                            
+                            Spacer()
+                            
+                            Button(action: {
+                                HapticManager.shared.light()
+                                showAI = true
+                            }) {
+                                Image(systemName: "sparkles.rectangle.stack")
+                                    .font(.title2)
+                                    .foregroundStyle(.red)
+                                    .padding(8)
+                                    .background(Color.white.opacity(0.1))
+                                    .clipShape(Circle())
+                            }
+                        }
+                        .padding(.top)
+                        .padding(.horizontal)
                         
                         if storage.recordings.isEmpty {
                             VStack(spacing: 20) {
@@ -103,6 +120,9 @@ struct LibraryView: View {
                 if let recording = selectedRecording {
                     PlaybackView(voiceRecorder: playbackVoiceRecorder, storage: storage, recording: recording)
                 }
+            }
+            .sheet(isPresented: $showAI) {
+                AIAssistantView(storage: storage)
             }
         }
         .background(Color.clear)
