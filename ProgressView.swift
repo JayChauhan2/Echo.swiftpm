@@ -145,6 +145,10 @@ struct PracticeGoalBox: View {
             RoundedRectangle(cornerRadius: 24)
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
+        // Accessibility
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(languageManager.t("Daily Practice Goal"))
+        .accessibilityValue("\(minutes) \(languageManager.t("out of")) \(goal) \(languageManager.t("minutes completed"))")
     }
 }
 
@@ -199,6 +203,10 @@ struct ConfidenceSnapshotBox: View {
                 animatedScore = Double(score)
             }
         }
+        // Accessibility
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(languageManager.t("Confidence Score"))
+        .accessibilityValue("\(score) \(languageManager.t("percent")). \(currentChange >= 0 ? "\(languageManager.t("Up")) \(currentChange)\(languageManager.t("percent this week"))" : languageManager.t("Consistent this week"))")
     }
 }
 
@@ -280,6 +288,10 @@ struct ConfidenceChartBox: View {
             RoundedRectangle(cornerRadius: 24)
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
+        // Accessibility
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(languageManager.t("Confidence Trend Chart"))
+        .accessibilityValue(trend.isEmpty ? languageManager.t("No data yet") : languageManager.t("Graph showing user confidence over the last few sessions"))
     }
 }
 
@@ -340,6 +352,10 @@ struct ClarityBox: View {
                 animatedScore = Double(score)
             }
         }
+        // Accessibility
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(languageManager.t("Clarity Score"))
+        .accessibilityValue("\(score) \(languageManager.t("percent")). \(score > 80 ? languageManager.t("Crystal clear") : languageManager.t("Good effort"))")
     }
 }
 
@@ -381,5 +397,9 @@ struct HesitationBox: View {
             RoundedRectangle(cornerRadius: 24)
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
+        // Accessibility
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(languageManager.t("Hesitation Status"))
+        .accessibilityValue(status)
     }
 }

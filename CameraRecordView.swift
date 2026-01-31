@@ -57,9 +57,12 @@ struct CameraRecordView: View {
                             .padding(.vertical, 8)
                             .padding(.horizontal, 16)
                             .background(.ultraThinMaterial)
+                            .background(.ultraThinMaterial)
                             .cornerRadius(20)
                             .foregroundStyle(.white)
                             .padding(.top, 20)
+                            .accessibilityLabel(languageManager.t("Presence Status"))
+                            .accessibilityValue(videoAnalyzer.currentPresence.rawValue)
                     }
                     
                     Spacer()
@@ -87,6 +90,8 @@ struct CameraRecordView: View {
                             }
                         }
                     }
+                    .accessibilityLabel(cameraManager.isRecording ? languageManager.t("Stop Recording") : languageManager.t("Start Recording"))
+                    .accessibilityAddTraits(.isButton)
                     
                     Text(cameraManager.isRecording ? languageManager.t("Recording Presence...") : languageManager.t("Tap to record"))
                         .font(.headline)
@@ -114,6 +119,9 @@ struct CameraRecordView: View {
                     }
                     .transition(.opacity)
                     .zIndex(2)
+                    .onAppear {
+                        UIAccessibility.post(notification: .announcement, argument: languageManager.t("Analyzing Presence..."))
+                    }
                 }
                 
                 // Countdown Overlay
@@ -212,6 +220,7 @@ struct CameraRecordView: View {
                 // Countdown from 3 to 1
                 for i in (1...3).reversed() {
                     countdownNumber = i
+                    UIAccessibility.post(notification: .announcement, argument: "\(i)")
                     HapticManager.shared.medium() // Haptic for each countdown number
                     try? await Task.sleep(nanoseconds: 1 * 1_000_000_000)
                 }
