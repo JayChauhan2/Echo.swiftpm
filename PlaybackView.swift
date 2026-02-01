@@ -8,6 +8,7 @@ struct PlaybackView: View {
     let recording: Recording
     
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var languageManager: LanguageManager
     @State private var showDeleteAlert = false
     
     var body: some View {
@@ -18,6 +19,10 @@ struct PlaybackView: View {
                 AudioPlaybackView(voiceRecorder: voiceRecorder, storage: storage, recording: recording)
             }
         }
+
+        .navigationTitle(getRecordingName())
+        .navigationBarTitleDisplayMode(.inline)
+        .background(Theme.background)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
@@ -29,19 +34,17 @@ struct PlaybackView: View {
                 }
             }
         }
-        .alert("Delete Recording", isPresented: $showDeleteAlert) {
-            Button("Cancel", role: .cancel) { 
+        .alert(languageManager.t("Delete Recording"), isPresented: $showDeleteAlert) {
+            Button(languageManager.t("Cancel"), role: .cancel) { 
                 HapticManager.shared.light() // Light haptic for cancel
             }
-                .tint(.white)
-            Button("Delete", role: .destructive) {
+            Button(languageManager.t("Delete"), role: .destructive) {
                 HapticManager.shared.error() // Error haptic for deletion
                 storage.deleteRecording(recording)
                 dismiss()
             }
-            .tint(.red)
         } message: {
-            Text("Are you sure you want to delete \"\(getRecordingName())\"?")
+            Text("\(languageManager.t("Are you sure you want to delete")) \"\(getRecordingName())\"?")
         }
     }
     
@@ -108,7 +111,7 @@ struct VideoPlaybackView: View {
                     ZStack(alignment: .leading) {
                         // Background
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.gray.opacity(0.15))
+                            .fill(Theme.secondaryBackground)
                         
                         VStack(spacing: 2) {
                             // Lane 1: Audio Confidence (Green/Orange)
@@ -136,7 +139,7 @@ struct VideoPlaybackView: View {
                         
                         // Playhead
                         Rectangle()
-                            .fill(Color.white)
+                            .fill(Theme.primaryLabel)
                             .frame(width: 2)
                             .padding(.vertical, -4) // EXTEND past lanes
                             .position(x: CGFloat(currentTime / recording.duration) * geometry.size.width, y: 15) // Approximate center
@@ -168,10 +171,10 @@ struct VideoPlaybackView: View {
                                         .foregroundStyle(.yellow)
                                     Text(insight)
                                         .font(.caption)
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(Theme.primaryLabel)
                                 }
                                 .padding(8)
-                                .background(Color.white.opacity(0.1))
+                                .background(Theme.tertiaryBackground)
                                 .cornerRadius(8)
                             }
                         }
@@ -196,9 +199,9 @@ struct VideoPlaybackView: View {
                      } label: {
                          Label(String(format: "%.1fx", player?.rate ?? 1.0), systemImage: "speedometer")
                              .font(.subheadline)
-                             .foregroundStyle(.white)
+                             .foregroundStyle(Theme.primaryLabel)
                              .padding(8)
-                             .background(Color.white.opacity(0.1))
+                             .background(Theme.tertiaryBackground)
                              .cornerRadius(8)
                      }
                  }
@@ -247,7 +250,8 @@ struct VideoPlaybackView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.black)
+
+        .background(Theme.background)
         .onAppear {
             setupPlayer()
         }
@@ -305,10 +309,10 @@ struct StatusValue: View {
         VStack {
             Text(label)
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(Theme.secondaryLabel)
             Text(value)
                 .font(.headline)
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.primaryLabel)
         }
     }
 }
@@ -329,16 +333,12 @@ struct AudioPlaybackView: View {
     
     var body: some View {
         VStack {
-            Text("Recording Playback")
-                .font(.title)
-                .padding()
-                .foregroundStyle(.white)
-            
+
             Spacer()
             
             Text(formattedTime(isDragging ? scrubbingTime : voiceRecorder.currentTime))
                 .font(.system(size: 40, weight: .light, design: .monospaced))
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.primaryLabel)
                 .padding(.bottom, 20)
             
             // Audio Visualization Graph
@@ -374,7 +374,7 @@ struct AudioPlaybackView: View {
                             ForEach(0..<secondsCount, id: \.self) { second in
                                 let xPos = CGFloat(second) * 200.0
                                 Rectangle().fill(Color.gray).frame(width: 2, height: 10).offset(x: xPos)
-                                Text(String(format: "0:%02d", second)).font(.caption2).foregroundStyle(.gray).offset(x: xPos + 4, y: 12)
+                                Text(String(format: "0:%02d", second)).font(.caption2).foregroundStyle(Theme.secondaryLabel).offset(x: xPos + 4, y: 12)
                                 ForEach(1..<5) { tick in
                                     Rectangle().fill(Color.gray.opacity(0.5)).frame(width: 1, height: 5).offset(x: xPos + CGFloat(tick) * 40.0)
                                 }
@@ -435,7 +435,7 @@ struct AudioPlaybackView: View {
                 Rectangle().fill(Color.white).frame(width: 2, height: 280).offset(y: -15)
             }
             .frame(height: 280)
-            .background(Color.black.opacity(0.3))
+            .background(Theme.secondaryBackground)
             
             Spacer()
             
@@ -451,35 +451,35 @@ struct AudioPlaybackView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 80, height: 80)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Theme.tint)
             }
             .padding()
             
             if let analysis = recording.analysis {
                 VStack(spacing: 15) {
-                    Text("Analysis Results").font(.headline).foregroundStyle(.white)
+                    Text("Analysis Results").font(.headline).foregroundStyle(Theme.primaryLabel)
                     HStack(spacing: 20) {
                         VStack {
-                            Text("Your State").font(.caption).foregroundStyle(.gray)
+                            Text("Your State").font(.caption).foregroundStyle(Theme.secondaryLabel)
                             Text(analysis.communicationState.rawValue).font(.title3).fontWeight(.bold).foregroundStyle(getColor(for: analysis.communicationState))
                         }
                         VStack {
-                            Text("Rate").font(.caption).foregroundStyle(.gray)
-                            Text(String(format: "%.0f WPM", analysis.speechRate)).fontWeight(.medium).foregroundStyle(.white)
+                            Text("Rate").font(.caption).foregroundStyle(Theme.secondaryLabel)
+                            Text(String(format: "%.0f WPM", analysis.speechRate)).fontWeight(.medium).foregroundStyle(Theme.primaryLabel)
                         }
                         VStack {
-                            Text("Pauses").font(.caption).foregroundStyle(.gray)
-                            Text(String(format: "%.1f /min", analysis.pauseFrequency)).fontWeight(.medium).foregroundStyle(.white)
+                            Text("Pauses").font(.caption).foregroundStyle(Theme.secondaryLabel)
+                            Text(String(format: "%.1f /min", analysis.pauseFrequency)).fontWeight(.medium).foregroundStyle(Theme.primaryLabel)
                         }
                     }
-                    .padding().background(Color.white.opacity(0.1)).cornerRadius(10)
+                    .padding().background(Theme.secondaryBackground).cornerRadius(10)
                     
                     if !analysis.transcription.isEmpty {
                         ScrollView {
-                            Text(analysis.transcription).font(.body).foregroundStyle(.white.opacity(0.8)).padding()
+                            Text(analysis.transcription).font(.body).foregroundStyle(Theme.secondaryLabel).padding()
                         }
                         .frame(maxHeight: 150)
-                        .background(Color.black.opacity(0.2))
+                        .background(Theme.tertiaryBackground)
                         .cornerRadius(10)
                     }
                 }
@@ -487,7 +487,7 @@ struct AudioPlaybackView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.black)
+        .background(Theme.background)
         .onAppear { voiceRecorder.startPlayback() }
         .onDisappear { voiceRecorder.stopPlayback() }
     }
@@ -592,13 +592,14 @@ struct MetricCard: View {
             Text(value)
                 .font(.title3)
                 .fontWeight(.bold)
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.primaryLabel)
             Text(title)
                 .font(.caption)
-                .foregroundStyle(.gray)
+                .foregroundStyle(Theme.secondaryLabel)
         }
         .padding()
-        .background(Color.white.opacity(0.1))
+
+        .background(Theme.tertiaryBackground)
         .cornerRadius(12)
     }
 }
