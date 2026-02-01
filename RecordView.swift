@@ -72,6 +72,7 @@ struct RecordView: View {
                 // Live Audio Visualizer
                 if voiceRecorder.isRecording {
                     AudioVisualizer(amplitude: voiceRecorder.currentAmplitude)
+                        .allowsHitTesting(false) // Pass touches through to the stop button
                 }
                 
                 // Analysis Loading Screen
@@ -126,6 +127,9 @@ struct RecordView: View {
             withAnimation { isAnalyzing = true }
             
             Task { @MainActor in
+                // Wait for file to be written
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                
                 if let recording = await voiceRecorder.getCurrentRecording() {
                     storage.saveRecording(recording)
                     selectedRecording = recording
