@@ -7,6 +7,9 @@ struct LibraryView: View {
     @EnvironmentObject var effectsState: GlobalEffectsState
     @EnvironmentObject var languageManager: LanguageManager
     
+    @State private var isSelectionMode = false
+    @State private var selectedRecordingIDs = Set<UUID>()
+    @State private var showBulkDeleteAlert = false
     @State private var selectedRecording: Recording?
     @State private var showPlayback = false
     @State private var recordingToDelete: Recording?
@@ -54,21 +57,43 @@ struct LibraryView: View {
                                 ForEach(Array(storage.recordings.enumerated()), id: \.element.id) { index, recording in
                                     Button(action: {
                                         HapticManager.shared.light() // Light haptic for selection
-                                        selectedRecording = recording
-                                        if !recording.isVideo {
-                                            playbackVoiceRecorder.loadRecording(recording)
+                                        if isSelectionMode {
+                                            if selectedRecordingIDs.contains(recording.id) {
+                                                selectedRecordingIDs.remove(recording.id)
+                                            } else {
+                                                selectedRecordingIDs.insert(recording.id)
+                                            }
+                                        } else {
+                                            selectedRecording = recording
+                                            if !recording.isVideo {
+                                                playbackVoiceRecorder.loadRecording(recording)
+                                            }
+                                            showPlayback = true
                                         }
-                                        showPlayback = true
                                     }) {
-                                        RecordingCard(recording: recording, index: index)
+                                        ZStack(alignment: .bottomTrailing) {
+                                            RecordingCard(recording: recording, index: index)
+                                                .opacity(isSelectionMode && !selectedRecordingIDs.contains(recording.id) ? 0.6 : 1.0)
+                                            
+                                            if isSelectionMode {
+                                                Image(systemName: selectedRecordingIDs.contains(recording.id) ? "checkmark.circle.fill" : "circle")
+                                                    .font(.title2)
+                                                    .foregroundStyle(selectedRecordingIDs.contains(recording.id) ? Theme.tint : .white)
+                                                    .padding(8)
+                                                    .background(Circle().fill(Color.black.opacity(0.5)))
+                                                    .padding(6)
+                                            }
+                                        }
                                     }
                                     .contextMenu {
-                                        Button(role: .destructive) {
-                                            HapticManager.shared.warning() // Warning haptic for delete
-                                            recordingToDelete = recording
-                                            showDeleteAlert = true
-                                        } label: {
-                                            Label(languageManager.t("Delete"), systemImage: "trash")
+                                        if !isSelectionMode { // Disable context menu in selection mode
+                                            Button(role: .destructive) {
+                                                HapticManager.shared.warning() // Warning haptic for delete
+                                                recordingToDelete = recording
+                                                showDeleteAlert = true
+                                            } label: {
+                                                Label(languageManager.t("Delete"), systemImage: "trash")
+                                            }
                                         }
                                     }
                                 }
@@ -86,7 +111,9 @@ struct LibraryView: View {
             .simultaneousGesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .global)
                     .onChanged { value in
-                        effectsState.touchLocation = value.location
+                        if !isSelectionMode { // Disable particles interaction in selection mode to avoid confusion
+                            effectsState.touchLocation = value.location
+                        }
                     }
                     .onEnded { _ in
                         effectsState.touchLocation = .zero
@@ -95,13 +122,41 @@ struct LibraryView: View {
             .navigationTitle(languageManager.t("Library"))
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button(action: {
-                        HapticManager.shared.light()
-                        showAI = true
-                    }) {
-                        Image(systemName: "sparkles.rectangle.stack")
-                            .font(.body) // Adaptive sizing
-                            .foregroundStyle(Theme.tint)
+                    HStack {
+                        if isSelectionMode {
+                             Button(languageManager.t("Cancel")) {
+                                 HapticManager.shared.light()
+                                 isSelectionMode = false
+                                 selectedRecordingIDs.removeAll()
+                             }
+                             .tint(Theme.brandPrimary)
+                        } else {
+                            Button(languageManager.t("Select")) {
+                                HapticManager.shared.light()
+                                isSelectionMode = true
+                            }
+                            
+                            Button(action: {
+                                HapticManager.shared.light()
+                                showAI = true
+                            }) {
+                                Image(systemName: "sparkles.rectangle.stack")
+                                    .font(.body)
+                                    .foregroundStyle(Theme.tint)
+                            }
+                        }
+                    }
+                }
+                
+                ToolbarItem(placement: .topBarLeading) {
+                    if isSelectionMode && !selectedRecordingIDs.isEmpty {
+                        Button(role: .destructive) {
+                             HapticManager.shared.warning()
+                             showBulkDeleteAlert = true
+                        } label: {
+                            Text("\(languageManager.t("Delete")) (\(selectedRecordingIDs.count))")
+                                .foregroundStyle(.red)
+                        }
                     }
                 }
             }
@@ -115,6 +170,22 @@ struct LibraryView: View {
             }
         }
         .background(Theme.background)
+        .alert(languageManager.t("Delete Selection"), isPresented: $showBulkDeleteAlert) {
+            Button(languageManager.t("Cancel"), role: .cancel) { }
+            Button(languageManager.t("Delete"), role: .destructive) {
+                HapticManager.shared.error()
+                // Bulk delete
+                for id in selectedRecordingIDs {
+                    if let recording = storage.recordings.first(where: { $0.id == id }) {
+                        storage.deleteRecording(recording)
+                    }
+                }
+                isSelectionMode = false
+                selectedRecordingIDs.removeAll()
+            }
+        } message: {
+            Text(languageManager.t("Are you sure you want to delete these recordings?"))
+        }
         .alert(languageManager.t("Delete Recording"), isPresented: $showDeleteAlert, presenting: recordingToDelete) { recording in
             Button(languageManager.t("Cancel"), role: .cancel) { 
                 HapticManager.shared.light() // Light haptic for cancel
