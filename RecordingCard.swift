@@ -22,7 +22,7 @@ struct RecordingCard: View {
             
             Text(formatDate(recording.date))
                 .font(.caption2)
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.primaryLabel)
                 .lineLimit(1)
             
             Text(formatDuration(recording.duration))

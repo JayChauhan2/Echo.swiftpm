@@ -1,8 +1,9 @@
 import SwiftUI
 
 struct CameraRecordView: View {
-    @StateObject var cameraManager = CameraManager()
-    @StateObject var videoAnalyzer = VideoAnalyzer()
+    @State private var cameraManager: CameraManager?
+    @State private var videoAnalyzer: VideoAnalyzer?
+    @State private var isInitializing = true
     @ObservedObject var storage: RecordingStorage
     @EnvironmentObject var languageManager: LanguageManager
     
@@ -17,7 +18,17 @@ struct CameraRecordView: View {
             ZStack {
                 Theme.background.ignoresSafeArea()
                 
-                if cameraManager.permissionGranted {
+                // Show loading state while initializing
+                if isInitializing {
+                    VStack(spacing: 20) {
+                        SwiftUI.ProgressView()
+                            .scaleEffect(1.5)
+                            .tint(Theme.tint)
+                        Text(languageManager.t("Loading Camera..."))
+                            .font(.headline)
+                            .foregroundStyle(Theme.secondaryLabel)
+                    }
+                } else if let cameraManager = cameraManager, cameraManager.permissionGranted {
                     CameraPreview(session: cameraManager.session)
                         .ignoresSafeArea()
                         .overlay(
@@ -39,7 +50,7 @@ struct CameraRecordView: View {
                     }
                 }
                 
-                if !cameraManager.isRecording {
+                if let cameraManager = cameraManager, !cameraManager.isRecording {
                     VStack {
                         Spacer()
                         MotivationalMessageView(type: .camera)
@@ -50,7 +61,7 @@ struct CameraRecordView: View {
                 }
 
                 VStack(spacing: 0) {
-                    if cameraManager.isRecording {
+                    if let cameraManager = cameraManager, let videoAnalyzer = videoAnalyzer, cameraManager.isRecording {
                         // Camera Feedback Overlay
                         Text(videoAnalyzer.currentPresence.rawValue)
                             .font(.headline)
@@ -71,7 +82,7 @@ struct CameraRecordView: View {
                         handleCameraRecording()
                     }) {
                         ZStack {
-                            if cameraManager.isRecording {
+                            if let cameraManager = cameraManager, cameraManager.isRecording {
                                 Image(systemName: "stop.circle.fill")
                                     .resizable()
                                     .aspectRatio(contentMode: .fit)
@@ -90,10 +101,10 @@ struct CameraRecordView: View {
                             }
                         }
                     }
-                    .accessibilityLabel(cameraManager.isRecording ? languageManager.t("Stop Recording") : languageManager.t("Start Recording"))
+                    .accessibilityLabel(cameraManager?.isRecording == true ? languageManager.t("Stop Recording") : languageManager.t("Start Recording"))
                     .accessibilityAddTraits(.isButton)
                     
-                    Text(cameraManager.isRecording ? languageManager.t("Recording Presence...") : languageManager.t("Tap to record"))
+                    Text(cameraManager?.isRecording == true ? languageManager.t("Recording Presence...") : languageManager.t("Tap to record"))
                         .font(.headline)
                         .padding()
                         .foregroundStyle(.white)
@@ -150,12 +161,49 @@ struct CameraRecordView: View {
                 }
             }
             .onAppear {
-                cameraManager.setFrameDelegate(videoAnalyzer)
+                // Initialize camera asynchronously to avoid blocking UI
+                if cameraManager == nil {
+                    Task {
+                        await initializeCamera()
+                    }
+                } else {
+                    // Restart session if already initialized (on background thread)
+                    DispatchQueue.global(qos: .userInitiated).async { [weak cameraManager] in
+                        cameraManager?.session.startRunning()
+                    }
+                }
+            }
+            .onDisappear {
+                // Stop session when view disappears to save resources (on background thread)
+                DispatchQueue.global(qos: .userInitiated).async { [weak cameraManager] in
+                    cameraManager?.session.stopRunning()
+                }
             }
         }
     }
     
+    func initializeCamera() async {
+        // Create managers on background thread
+        let newCameraManager = CameraManager()
+        let newVideoAnalyzer = VideoAnalyzer()
+        
+        // Small delay to ensure view is rendered
+        try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+        
+        // Set up the connection
+        newCameraManager.setFrameDelegate(newVideoAnalyzer)
+        
+        // Update state on main thread
+        await MainActor.run {
+            self.cameraManager = newCameraManager
+            self.videoAnalyzer = newVideoAnalyzer
+            self.isInitializing = false
+        }
+    }
+    
     func handleCameraRecording() {
+        guard let cameraManager = cameraManager, let videoAnalyzer = videoAnalyzer else { return }
+        
         if cameraManager.isRecording {
             HapticManager.shared.heavy() // Heavy haptic when stopping
             Task {
