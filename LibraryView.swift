@@ -71,17 +71,15 @@ struct LibraryView: View {
                                             showPlayback = true
                                         }
                                     }) {
-                                        ZStack(alignment: .bottomTrailing) {
+                                        ZStack(alignment: .topLeading) {
                                             RecordingCard(recording: recording, index: index)
                                                 .opacity(isSelectionMode && !selectedRecordingIDs.contains(recording.id) ? 0.6 : 1.0)
                                             
                                             if isSelectionMode {
                                                 Image(systemName: selectedRecordingIDs.contains(recording.id) ? "checkmark.circle.fill" : "circle")
-                                                    .font(.title2)
-                                                    .foregroundStyle(selectedRecordingIDs.contains(recording.id) ? Theme.tint : .white)
-                                                    .padding(8)
-                                                    .background(Circle().fill(Color.black.opacity(0.5)))
-                                                    .padding(6)
+                                                    .font(.system(size: 16, weight: .thin))
+                                                    .foregroundStyle(selectedRecordingIDs.contains(recording.id) ? Theme.tint : .white.opacity(0.8))
+                                                    .offset(x: -8, y: -8) // Position center at top-left corner
                                             }
                                         }
                                     }
