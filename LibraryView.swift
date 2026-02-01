@@ -122,19 +122,6 @@ struct LibraryView: View {
             .navigationTitle(languageManager.t("Library"))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    if !isSelectionMode {
-                        Button(action: {
-                            HapticManager.shared.light()
-                            showAI = true
-                        }) {
-                            Image(systemName: "sparkles.rectangle.stack")
-                                .font(.body)
-                                .foregroundStyle(Theme.tint)
-                        }
-                    }
-                }
-                
-                ToolbarItem(placement: .primaryAction) {
                     if isSelectionMode {
                          Button(languageManager.t("Cancel")) {
                              HapticManager.shared.light()
@@ -151,7 +138,16 @@ struct LibraryView: View {
                 }
                 
                 ToolbarItem(placement: .topBarLeading) {
-                    if isSelectionMode && !selectedRecordingIDs.isEmpty {
+                    if !isSelectionMode {
+                         Button(action: {
+                            HapticManager.shared.light()
+                            showAI = true
+                        }) {
+                            Image(systemName: "sparkles.rectangle.stack")
+                                .font(.body)
+                                .foregroundStyle(Theme.tint)
+                        }
+                    } else if !selectedRecordingIDs.isEmpty {
                         Button(role: .destructive) {
                              HapticManager.shared.warning()
                              showBulkDeleteAlert = true
