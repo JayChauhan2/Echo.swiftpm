@@ -15,6 +15,7 @@ struct ContentView: View {
 
     @StateObject var effectsState = GlobalEffectsState()
     @StateObject var languageManager = LanguageManager.shared
+    @StateObject var appearanceManager = AppearanceManager.shared
 
     var body: some View {
         ZStack {
@@ -57,5 +58,7 @@ struct ContentView: View {
         }
         .environmentObject(effectsState)
         .environmentObject(languageManager)
+        .environmentObject(appearanceManager)
+        .preferredColorScheme(appearanceManager.colorScheme)
     }
 }

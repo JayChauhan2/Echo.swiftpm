@@ -109,6 +109,10 @@ class LanguageManager: ObservableObject {
             
             // App settings
             "App Language": "Idioma de la Aplicación",
+            "Appearance": "Apariencia",
+            "System": "Sistema",
+            "Light": "Claro",
+            "Dark": "Oscuro",
             
             // Motivational Messages
              "Ready to Rock Today?": "¿Listo para rockear hoy?",
@@ -207,6 +211,10 @@ class LanguageManager: ObservableObject {
             "Words practiced total": "Mots pratiqués au total",
             
             "App Language": "Langue de l'application",
+            "Appearance": "Apparence",
+            "System": "Système",
+            "Light": "Clair",
+            "Dark": "Sombre",
             
             "Ready to Rock Today?": "Prêt pour aujourd'hui?",
             "Time to shine!": "C'est l'heure de briller!",
@@ -304,6 +312,10 @@ class LanguageManager: ObservableObject {
             "Words practiced total": "練習した単語の合計",
             
             "App Language": "アプリの言語",
+            "Appearance": "外観",
+            "System": "システム",
+            "Light": "ライト",
+            "Dark": "ダーク",
             
             "Ready to Rock Today?": "今日も頑張る準備はいい？",
             "Time to shine!": "輝く時間です！",
@@ -401,6 +413,10 @@ class LanguageManager: ObservableObject {
             "Words practiced total": "Geübte Wörter insgesamt",
             
             "App Language": "App-Sprache",
+            "Appearance": "Erscheinungsbild",
+            "System": "System",
+            "Light": "Hell",
+            "Dark": "Dunkel",
             
              "Ready to Rock Today?": "Bereit loszulegen?",
              "Time to shine!": "Zeit zu glänzen!",
