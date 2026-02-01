@@ -105,7 +105,7 @@ struct CameraRecordView: View {
                 // Analysis Loading Screen
                 if isAnalyzing {
                     ZStack {
-                        Color.black.ignoresSafeArea()
+                        Theme.background.ignoresSafeArea()
                         VStack(spacing: 30) {
                             AnalysisLoadingView()
                                 .frame(width: 200, height: 200)
@@ -113,7 +113,7 @@ struct CameraRecordView: View {
                             Text(languageManager.t("Analyzing Presence..."))
                                 .font(.title3)
                                 .fontWeight(.medium)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Theme.primaryLabel)
                                 .opacity(0.8)
                         }
                     }

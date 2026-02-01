@@ -78,7 +78,7 @@ struct RecordView: View {
                 // Analysis Loading Screen
                 if isAnalyzing {
                     ZStack {
-                        Color.black.ignoresSafeArea()
+                        Theme.background.ignoresSafeArea()
                         ParticleView(gravity: effectsState.gravity).ignoresSafeArea().opacity(0.5)
                         
                         VStack(spacing: 30) {
@@ -88,7 +88,7 @@ struct RecordView: View {
                             Text(languageManager.t("Analyzing Audio..."))
                                 .font(.title3)
                                 .fontWeight(.medium)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Theme.primaryLabel)
                                 .opacity(0.8)
                         }
                     }
