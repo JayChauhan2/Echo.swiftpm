@@ -16,6 +16,7 @@ struct ContentView: View {
     @StateObject var effectsState = GlobalEffectsState()
     @StateObject var languageManager = LanguageManager.shared
     @StateObject var appearanceManager = AppearanceManager.shared
+    @StateObject var onboardingManager = OnboardingManager()
 
     var body: some View {
         ZStack {
@@ -59,6 +60,18 @@ struct ContentView: View {
         .environmentObject(effectsState)
         .environmentObject(languageManager)
         .environmentObject(appearanceManager)
+        .environmentObject(onboardingManager)
+        .environmentObject(storage)
         .preferredColorScheme(appearanceManager.colorScheme)
+        .fullScreenCover(isPresented: $onboardingManager.shouldShowOnboarding) {
+            OnboardingView(storage: storage)
+                .environmentObject(onboardingManager)
+                .environmentObject(storage)
+                .environmentObject(languageManager)
+        }
+        .onAppear {
+            // Show onboarding every time the app launches
+            onboardingManager.showOnboarding()
+        }
     }
 }

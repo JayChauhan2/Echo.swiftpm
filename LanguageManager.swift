@@ -170,7 +170,36 @@ class LanguageManager: ObservableObject {
              "High pauses": "Muchas pausas",
              "No analysis yet": "Sin análisis aún",
              "No data this week": "Sin datos esta semana",
-             "Analyzing...": "Analizando..."
+             "Analyzing...": "Analizando...",
+             
+             // Onboarding
+             "Welcome to Echo": "Bienvenido a Echo",
+             "Welcome Back": "Bienvenido de Nuevo",
+             "Welcome to Echo! This app helps you improve your communication skills through voice and video analysis. Practice regularly, track your progress, and watch your confidence grow.": "¡Bienvenido a Echo! Esta aplicación te ayuda a mejorar tus habilidades de comunicación a través del análisis de voz y video. Practica regularmente, rastrea tu progreso y observa cómo crece tu confianza.",
+             "Ready to start your journey? Record your first practice session and discover insights about your communication style.": "¿Listo para comenzar tu viaje? Graba tu primera sesión de práctica y descubre información sobre tu estilo de comunicación.",
+             "Keep going! Consistency is key. Try focusing on speaking slowly and clearly in your next session.": "¡Sigue adelante! La consistencia es clave. Intenta enfocarte en hablar lenta y claramente en tu próxima sesión.",
+             "Excellent work! Your confidence is improving. Consider increasing your practice goal to challenge yourself further.": "¡Excelente trabajo! Tu confianza está mejorando. Considera aumentar tu meta de práctica para desafiarte más.",
+             "You're doing great! Your confidence is strong and you've hit your daily goal. Keep up the amazing work!": "¡Lo estás haciendo genial! Tu confianza es fuerte y has alcanzado tu meta diaria. ¡Sigue con el trabajo increíble!",
+             "Welcome back! Ready to continue improving your communication skills? Let's make today count.": "¡Bienvenido de nuevo! ¿Listo para seguir mejorando tus habilidades de comunicación? Hagamos que hoy cuente.",
+             "I'm Ready!": "¡Estoy Listo!",
+             "I'm Ready! Dismiss onboarding": "¡Estoy Listo! Descartar incorporación",
+             "Double tap to start using Echo": "Toca dos veces para comenzar a usar Echo",
+             "Voice Recording": "Grabación de Voz",
+             "Record and analyze your voice for clarity and confidence": "Graba y analiza tu voz para claridad y confianza",
+             "Video Analysis": "Análisis de Video",
+             "Capture your presence and body language": "Captura tu presencia y lenguaje corporal",
+             "Track Progress": "Rastrear Progreso",
+             "Monitor your improvement over time": "Monitorea tu mejora con el tiempo",
+             "AI Insights": "Perspectivas de IA",
+             "Get personalized feedback and suggestions": "Obtén retroalimentación y sugerencias personalizadas",
+             
+             // Returning User Onboarding
+             "Level Up Your Voice": "Mejora Tu Voz",
+             "Continue practicing to unlock your full vocal potential": "Continúa practicando para desbloquear todo tu potencial vocal",
+             "Smart Analysis": "Análisis Inteligente",
+             "Did you know Echo spots filler words like 'um' and 'ah' to help you sound pro?": "¿Sabías que Echo detecta muletillas como 'eh' y 'em' para ayudarte a sonar profesional?",
+             "Measure Your Impact": "Mide Tu Impacto",
+             "See exactly how confident you appear with advanced AI analysis": "Mira exactamente cuán seguro pareces con el análisis avanzado de IA"
         ],
         .french: [
             "Voice": "Voix",
@@ -477,3 +506,4 @@ class LanguageManager: ObservableObject {
         ]
     ]
 }
+// Temporary marker for onboarding translations
