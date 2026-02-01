@@ -33,12 +33,14 @@ struct ParticleView: View {
         TimelineView(.animation) { timeline in
             Canvas { context, size in
                 // Additive blending for that "glowing" energy look
+                // Additive blending for that "glowing" energy look
                 context.blendMode = .plusLighter
                 
                 for particle in particles {
-                    var contextCopy = context
-                    contextCopy.opacity = particle.opacity
-                    contextCopy.addFilter(.blur(radius: particle.blur))
+                    // Optimization: Use local context copy to avoid expensive state push/pop if possible, 
+                    // and use Gradient instead of Blur for performance
+                    var ctx = context
+                    ctx.opacity = particle.opacity
                     
                     let rect = CGRect(
                         x: particle.x,
@@ -47,7 +49,17 @@ struct ParticleView: View {
                         height: particle.size
                     )
                     
-                    contextCopy.fill(Path(ellipseIn: rect), with: .color(particle.color))
+                    let gradient = Gradient(colors: [particle.color, particle.color.opacity(0)])
+                    
+                    ctx.fill(
+                        Path(ellipseIn: rect),
+                        with: .radialGradient(
+                            gradient,
+                            center: CGPoint(x: rect.midX, y: rect.midY),
+                            startRadius: 0,
+                            endRadius: particle.size / 2
+                        )
+                    )
                 }
             }
             .onAppear {

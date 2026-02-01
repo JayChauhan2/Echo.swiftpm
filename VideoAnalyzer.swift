@@ -5,6 +5,7 @@ class VideoAnalyzer: NSObject, ObservableObject {
     @Published var currentPresence: PresenceState = .absent
     
     // MARK: - Collected Data
+    private var lastUiState: PresenceState = .absent
     private var events: [VisualEvent] = []
     
     // Movement Tracking
@@ -220,8 +221,12 @@ class VideoAnalyzer: NSObject, ObservableObject {
         else if (movementVelocities.last ?? 0) > 0.02 { uiState = .fidgeting }
         else { uiState = .grounded }
         
-        DispatchQueue.main.async {
-            self.currentPresence = uiState
+        // Critical Optimization: Throttle Main Thread Updates
+        if uiState != lastUiState {
+            lastUiState = uiState
+            DispatchQueue.main.async {
+                self.currentPresence = uiState
+            }
         }
     }
     
