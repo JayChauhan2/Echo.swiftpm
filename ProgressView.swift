@@ -80,7 +80,7 @@ struct PracticeGoalBox: View {
             HStack {
                 Text(languageManager.t("Daily Goal"))
                     .font(.headline)
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(Theme.secondaryLabel)
                 Spacer()
                 Image(systemName: "hourglass")
                     .foregroundStyle(.blue)
@@ -107,7 +107,7 @@ struct PracticeGoalBox: View {
                     Text("\(minutes) / \(goal)")
                         .font(.title2)
                         .fontWeight(.bold)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.primaryLabel)
                     Text(languageManager.t("min today"))
                         .font(.caption)
                         .foregroundStyle(.gray)
@@ -125,11 +125,11 @@ struct PracticeGoalBox: View {
             Spacer()
         }
         .padding()
-        .background(Color.white.opacity(0.12))
+        .background(Theme.secondaryBackground)
         .cornerRadius(24)
         .overlay(
             RoundedRectangle(cornerRadius: 24)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Theme.tertiaryBackground, lineWidth: 1)
         )
         // Accessibility
         .accessibilityElement(children: .combine)
@@ -150,7 +150,7 @@ struct ConfidenceSnapshotBox: View {
             HStack {
                 Text(languageManager.t("Confidence"))
                     .font(.headline)
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(Theme.secondaryLabel)
                 Spacer()
                 Image(systemName: "sparkles")
                     .foregroundStyle(.green)
@@ -160,7 +160,7 @@ struct ConfidenceSnapshotBox: View {
             
             AnimatableNumberText(value: animatedScore, suffix: "%")
                 .font(.system(size: 48, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.primaryLabel)
             
             HStack(spacing: 4) {
                 if currentChange >= 0 {
@@ -178,11 +178,11 @@ struct ConfidenceSnapshotBox: View {
             Spacer()
         }
         .padding()
-        .background(Color.white.opacity(0.12))
+        .background(Theme.secondaryBackground)
         .cornerRadius(24)
         .overlay(
             RoundedRectangle(cornerRadius: 24)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Theme.tertiaryBackground, lineWidth: 1)
         )
         .onAppear {
             withAnimation(.easeOut(duration: 2.0)) {
@@ -221,7 +221,7 @@ struct ConfidenceChartBox: View {
         VStack(alignment: .leading) {
             Text(languageManager.t("Confidence Over Time"))
                 .font(.headline)
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(Theme.secondaryLabel)
             
             if trend.isEmpty {
                 Spacer()
@@ -268,11 +268,11 @@ struct ConfidenceChartBox: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.12))
+        .background(Theme.secondaryBackground)
         .cornerRadius(24)
         .overlay(
             RoundedRectangle(cornerRadius: 24)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Theme.tertiaryBackground, lineWidth: 1)
         )
         // Accessibility
         .accessibilityElement(children: .combine)
@@ -292,7 +292,7 @@ struct ClarityBox: View {
             HStack {
                 Text(languageManager.t("Clarity"))
                     .font(.headline)
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(Theme.secondaryLabel)
                 Spacer()
                 Image(systemName: "mic.badge.plus") // Symbol for clear mic
                     .foregroundStyle(.purple)
@@ -305,9 +305,9 @@ struct ClarityBox: View {
                 AnimatableNumberText(value: animatedScore, suffix: "%")
                     .font(.title)
                     .fontWeight(.bold)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.primaryLabel)
                 
-                    .foregroundStyle(.white)
+
                 
                 Text(score > 80 ? languageManager.t("Crystal clear") : languageManager.t("Good effort"))
                     .font(.caption)
@@ -327,11 +327,11 @@ struct ClarityBox: View {
             Spacer()
         }
         .padding()
-        .background(Color.white.opacity(0.12))
+        .background(Theme.secondaryBackground)
         .cornerRadius(24)
         .overlay(
             RoundedRectangle(cornerRadius: 24)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Theme.tertiaryBackground, lineWidth: 1)
         )
         .onAppear {
             withAnimation(.easeOut(duration: 1.5)) {
@@ -355,7 +355,7 @@ struct HesitationBox: View {
             HStack {
                 Text("Hesitation")
                     .font(.headline)
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(Theme.secondaryLabel)
                 Spacer()
                 Image(systemName: "waveform.path.ecg")
                     .foregroundStyle(.orange)
@@ -366,7 +366,7 @@ struct HesitationBox: View {
             Text(status)
                 .font(.title3) // Smaller font to fit text
                 .fontWeight(.bold)
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.primaryLabel)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
             
@@ -377,11 +377,11 @@ struct HesitationBox: View {
             Spacer()
         }
         .padding()
-        .background(Color.white.opacity(0.12))
+        .background(Theme.secondaryBackground)
         .cornerRadius(24)
         .overlay(
             RoundedRectangle(cornerRadius: 24)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(Theme.tertiaryBackground, lineWidth: 1)
         )
         // Accessibility
         .accessibilityElement(children: .combine)

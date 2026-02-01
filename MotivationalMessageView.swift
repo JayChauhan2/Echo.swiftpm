@@ -49,7 +49,7 @@ struct MotivationalMessageView: View {
             Text(textPart)
                 .font(.title2) // Bigger text
                 .fontWeight(.bold) // Bolder for better visibility
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.primaryLabel)
             
             WigglingEmojiView(emoji: emojiPart)
         }
