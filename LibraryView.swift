@@ -17,7 +17,8 @@ struct LibraryView: View {
         NavigationStack {
             ZStack {
                 // Background - Remove solid color to show Global Particles
-                Color.black.ignoresSafeArea()
+                // Background - Remove solid color to show Global Particles
+                // Theme background is handled on the NavigationStack container
                 
                 ParticleView(amplitude: effectsState.amplitude, touchLocation: effectsState.touchLocation, gravity: effectsState.gravity)
                     .ignoresSafeArea()
@@ -30,50 +31,25 @@ struct LibraryView: View {
                 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        HStack {
-                            Text(languageManager.t("Library"))
-                                .font(.largeTitle)
-                                .fontWeight(.bold)
-                                .foregroundStyle(.red)
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                HapticManager.shared.light()
-                                showAI = true
-                            }) {
-                                Image(systemName: "sparkles.rectangle.stack")
-                                    .font(.title2)
-                                    .foregroundStyle(.red)
-                                    .padding(8)
-                                    .background(Color.white.opacity(0.1))
-                                    .clipShape(Circle())
-                            }
-                        }
-                        .padding(.top)
-                        .padding(.horizontal)
-                        
                         if storage.recordings.isEmpty {
                             VStack(spacing: 20) {
                                 Image(systemName: "books.vertical")
                                     .font(.system(size: 60))
-                                    .foregroundStyle(.gray.opacity(0.5))
+                                    .foregroundStyle(Color.secondary)
                                 
                                 Text(languageManager.t("Your library is empty"))
                                     .font(.title3)
-                                    .foregroundStyle(.gray)
+                                    .foregroundStyle(Color.secondary)
                                 
                                 Text(languageManager.t("Recordings you save will appear here"))
                                     .font(.subheadline)
-                                    .foregroundStyle(.gray.opacity(0.8))
+                                    .foregroundStyle(Color.secondary.opacity(0.8))
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.top, 100)
                         } else {
                             LazyVGrid(columns: [
-                                GridItem(.flexible(), spacing: 15),
-                                GridItem(.flexible(), spacing: 15),
-                                GridItem(.flexible(), spacing: 15)
+                                GridItem(.adaptive(minimum: 100), spacing: 15) // Adaptive for dynamic type/screens
                             ], spacing: 15) {
                                 ForEach(Array(storage.recordings.enumerated()), id: \.element.id) { index, recording in
                                     Button(action: {
@@ -116,6 +92,19 @@ struct LibraryView: View {
                         effectsState.touchLocation = .zero
                     }
             )
+            .navigationTitle(languageManager.t("Library"))
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: {
+                        HapticManager.shared.light()
+                        showAI = true
+                    }) {
+                        Image(systemName: "sparkles.rectangle.stack")
+                            .font(.body) // Adaptive sizing
+                            .foregroundStyle(Theme.tint)
+                    }
+                }
+            }
             .navigationDestination(isPresented: $showPlayback) {
                 if let recording = selectedRecording {
                     PlaybackView(voiceRecorder: playbackVoiceRecorder, storage: storage, recording: recording)
@@ -125,17 +114,16 @@ struct LibraryView: View {
                 AIAssistantView(storage: storage)
             }
         }
-        .background(Color.clear)
+        .background(Theme.background)
         .alert(languageManager.t("Delete Recording"), isPresented: $showDeleteAlert, presenting: recordingToDelete) { recording in
             Button(languageManager.t("Cancel"), role: .cancel) { 
                 HapticManager.shared.light() // Light haptic for cancel
             }
-                .tint(.white)
+                .tint(Theme.brandPrimary)
             Button(languageManager.t("Delete"), role: .destructive) {
                 HapticManager.shared.error() // Error haptic for deletion
                 storage.deleteRecording(recording)
             }
-            .tint(.red)
         } message: { recording in
             Text("Are you sure you want to delete \"\(getRecordingName(recording))\"?") // Keeping complex string partial for now
         }

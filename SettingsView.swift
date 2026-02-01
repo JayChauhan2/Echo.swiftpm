@@ -5,35 +5,21 @@ struct SettingsView: View {
     
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color.black.ignoresSafeArea()
-                
-                VStack(alignment: .leading, spacing: 20) {
-                    
-                    Text(languageManager.t("Settings"))
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.red)
-                        .padding(.top)
-                        .padding(.horizontal)
-                    
-                    Form {
-                        Section {
-                            Picker(languageManager.t("App Language"), selection: $languageManager.currentLanguage) {
-                                ForEach(Language.allCases) { language in
-                                    Text("\(language.flag) \(language.rawValue)").tag(language)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                        } header: {
-                            Text(languageManager.t("App Language"))
-                                .foregroundStyle(.gray)
+            Form {
+                Section {
+                    Picker(languageManager.t("App Language"), selection: $languageManager.currentLanguage) {
+                        ForEach(Language.allCases) { language in
+                            Text("\(language.flag) \(language.rawValue)").tag(language)
                         }
                     }
-                    .scrollContentBackground(.hidden)
-                    .background(Color.clear)
+                    .pickerStyle(.menu)
+                } header: {
+                    Text(languageManager.t("App Language"))
                 }
             }
+            .navigationTitle(languageManager.t("Settings"))
+            .scrollContentBackground(.hidden)
+            .background(Theme.background)
         }
     }
 }

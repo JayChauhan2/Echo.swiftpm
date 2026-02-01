@@ -53,9 +53,8 @@ struct ContentView: View {
                         Label(languageManager.t("Settings"), systemImage: "ellipsis.circle.fill")
                     }
             }
-            .accentColor(.red) // Highlight color
+            .accentColor(Theme.tint) // Highlight color
         }
-        .preferredColorScheme(.dark)
         .environmentObject(effectsState)
         .environmentObject(languageManager)
     }

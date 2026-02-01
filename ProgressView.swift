@@ -10,23 +10,8 @@ struct ProgressView: View {
     }
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                // Header
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(languageManager.t("Your Progress 🚀"))
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.red)
-                    
-                    Text(languageManager.t("Practice, reflection, and growth over time"))
-                        .font(.body)
-                        .foregroundStyle(.gray)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal)
-                .padding(.top, 20)
-                
+        NavigationStack {
+            ScrollView {
                 // Bento Grid
                 VStack(spacing: 16) {
                     // Top Row: Practice Goal (Hero) + Confidence Snapshot
@@ -34,46 +19,47 @@ struct ProgressView: View {
                         // Box 1: Practice Goal (Blue/Purple theme)
                         PracticeGoalBox(minutes: viewModel.practiceMinutesToday, goal: viewModel.practiceGoalMinutes)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 180)
+                            .frame(minHeight: 180) // Use minHeight for dynamic type support
                         
                         // Box 2: Confidence Snapshot (Green theme)
                         ConfidenceSnapshotBox(score: viewModel.currentConfidence, currentChange: viewModel.confidenceChange)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 180)
+                            .frame(minHeight: 180)
                     }
                     
                     // Box 3: Confidence Chart (Full Width)
                     ConfidenceChartBox(trend: viewModel.confidenceTrend)
-                        .frame(height: 220)
+                        .frame(minHeight: 220)
                     
                     // Bottom Row: Clarity + Hesitation
                     HStack(spacing: 16) {
                         // Box 4: Clarity (Purple theme)
                         ClarityBox(score: viewModel.clarityScore)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 160)
+                            .frame(minHeight: 160)
                         
                         // Box 5: Hesitation (Orange theme)
                         HesitationBox(status: viewModel.hesitationScore)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 160)
+                            .frame(minHeight: 160)
                     }
                     
                     // Optional: Words Practiced
                     HStack {
                         Text("\(languageManager.t("Words practiced total")): \(viewModel.wordsPracticed)")
                             .font(.caption)
-                            .foregroundStyle(.gray)
+                            .foregroundStyle(Color.secondary)
                     }
                     .padding(.top)
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 40)
             }
-        }
-        .background(Color.black.ignoresSafeArea())
-        .onAppear {
-            viewModel.recalculateMetrics()
+            .navigationTitle(languageManager.t("Progress"))
+            .background(Theme.background)
+            .onAppear {
+                viewModel.recalculateMetrics()
+            }
         }
     }
 }

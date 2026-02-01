@@ -14,7 +14,7 @@ struct RecordView: View {
         NavigationStack {
             ZStack {
                 // Background - Remove solid color to show Global Particles
-                Color.black.ignoresSafeArea()
+                // Theme background is handled on the NavigationStack container
                 
                 ParticleView(amplitude: effectsState.amplitude, touchLocation: effectsState.touchLocation, gravity: effectsState.gravity)
                     .ignoresSafeArea()
@@ -58,7 +58,7 @@ struct RecordView: View {
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 100, height: 100)
-                            .foregroundColor(.red)
+                            .foregroundStyle(Theme.brandPrimary.gradient)
                     }
                     
                     Text(voiceRecorder.isRecording ? languageManager.t("Recording...") : languageManager.t("Tap to record"))
@@ -104,18 +104,9 @@ struct RecordView: View {
                         effectsState.touchLocation = .zero
                     }
             )
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text(languageManager.t("Voice"))
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.red)
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .navigationTitle(languageManager.t("Voice"))
             .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarBackground(Color.clear, for: .navigationBar)
+            .toolbarBackground(Theme.background.opacity(0.8), for: .navigationBar)
             .navigationDestination(isPresented: $showPlayback) {
                 if let recording = selectedRecording {
                     PlaybackView(voiceRecorder: voiceRecorder, storage: storage, recording: recording)
@@ -125,8 +116,7 @@ struct RecordView: View {
                 voiceRecorder.requestPermission()
             }
         }
-
-        .background(Color.clear)
+        .background(Theme.background)
     }
     
     func handleAudioRecording() {
