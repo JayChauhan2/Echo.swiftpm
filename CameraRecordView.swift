@@ -15,7 +15,7 @@ struct CameraRecordView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.black.ignoresSafeArea()
+                Theme.background.ignoresSafeArea()
                 
                 if cameraManager.permissionGranted {
                     CameraPreview(session: cameraManager.session)
@@ -139,18 +139,9 @@ struct CameraRecordView: View {
                     .zIndex(3)
                 }
             }
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text(languageManager.t("Camera"))
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.red)
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .navigationTitle(languageManager.t("Camera"))
             .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarBackground(Color.clear, for: .navigationBar)
+            .toolbarBackground(Theme.background.opacity(0.4), for: .navigationBar)
             .navigationDestination(isPresented: $showPlayback) {
                 if let recording = selectedRecording {
                     // For playback we need a dummy voiceRecorder as PlaybackView requires it

@@ -121,29 +121,31 @@ struct LibraryView: View {
             )
             .navigationTitle(languageManager.t("Library"))
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    if !isSelectionMode {
+                        Button(action: {
+                            HapticManager.shared.light()
+                            showAI = true
+                        }) {
+                            Image(systemName: "sparkles.rectangle.stack")
+                                .font(.body)
+                                .foregroundStyle(Theme.tint)
+                        }
+                    }
+                }
+                
                 ToolbarItem(placement: .primaryAction) {
-                    HStack {
-                        if isSelectionMode {
-                             Button(languageManager.t("Cancel")) {
-                                 HapticManager.shared.light()
-                                 isSelectionMode = false
-                                 selectedRecordingIDs.removeAll()
-                             }
-                             .tint(Theme.brandPrimary)
-                        } else {
-                            Button(languageManager.t("Select")) {
-                                HapticManager.shared.light()
-                                isSelectionMode = true
-                            }
-                            
-                            Button(action: {
-                                HapticManager.shared.light()
-                                showAI = true
-                            }) {
-                                Image(systemName: "sparkles.rectangle.stack")
-                                    .font(.body)
-                                    .foregroundStyle(Theme.tint)
-                            }
+                    if isSelectionMode {
+                         Button(languageManager.t("Cancel")) {
+                             HapticManager.shared.light()
+                             isSelectionMode = false
+                             selectedRecordingIDs.removeAll()
+                         }
+                         .tint(Theme.brandPrimary)
+                    } else {
+                        Button(languageManager.t("Select")) {
+                            HapticManager.shared.light()
+                            isSelectionMode = true
                         }
                     }
                 }
