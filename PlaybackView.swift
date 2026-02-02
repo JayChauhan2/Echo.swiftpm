@@ -70,7 +70,8 @@ struct VideoPlaybackView: View {
     let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
     
     var body: some View {
-        VStack {
+        ScrollView {
+            VStack {
             // Video Player
             ZStack(alignment: .bottom) {
                 if let player = player {
@@ -98,6 +99,7 @@ struct VideoPlaybackView: View {
                         .transition(.scale.combined(with: .opacity))
                 }
             }
+            .frame(maxHeight: 550)
             
             // Smart Timeline
             VStack(alignment: .leading, spacing: 8) {
@@ -247,7 +249,8 @@ struct VideoPlaybackView: View {
             }
             .padding()
             
-            Spacer()
+            Color.clear.frame(height: 20)
+        }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
