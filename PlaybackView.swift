@@ -211,7 +211,8 @@ struct VideoPlaybackView: View {
                  
                  if let analysis = recording.videoAnalysis {
                      // Detailed Metrics Grid
-                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                     // Detailed Metrics Grid
+                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)], spacing: 16) {
                          // 1. Gaze
                          MetricCard(
                              title: "Eye Contact",
@@ -590,24 +591,32 @@ struct MetricCard: View {
     let color: Color
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Image(systemName: icon)
-                    .foregroundStyle(color)
-                Spacer()
-            }
+        VStack(alignment: .leading, spacing: 10) {
+            // Icon
+            Image(systemName: icon)
+                .font(.system(size: 20))
+                .foregroundStyle(color)
+                .frame(width: 44, height: 44)
+                .background(color.opacity(0.1))
+                .clipShape(Circle())
+            
+            Spacer()
+            
             Text(value)
-                .font(.title3)
+                .font(.system(.title2, design: .rounded))
                 .fontWeight(.bold)
                 .foregroundStyle(Theme.primaryLabel)
+                .minimumScaleFactor(0.8)
+                
             Text(title)
-                .font(.caption)
+                .font(.subheadline)
+                .fontWeight(.medium)
                 .foregroundStyle(Theme.secondaryLabel)
         }
-        .padding()
-
-        .background(Theme.tertiaryBackground)
-        .cornerRadius(12)
+        .padding(16)
+        .frame(maxWidth: .infinity, minHeight: 150, alignment: .topLeading)
+        .background(Theme.secondaryBackground) // Using secondary for card look
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 }
 
