@@ -135,16 +135,25 @@ class VideoAnalyzer: NSObject, ObservableObject {
         
         totalFaceFrames += 1
         
-        // --- 1. Movement Analysis ---
+        // --- 1. Movement Analysis (Normalized) ---
         let currentCenter = CGPoint(x: face.boundingBox.midX, y: face.boundingBox.midY)
         if let prev = previousFaceCenter {
             let dx = currentCenter.x - prev.x
             let dy = currentCenter.y - prev.y
-            let dist = sqrt(dx*dx + dy*dy)
-            movementVelocities.append(dist)
+            let rawDist = sqrt(dx*dx + dy*dy)
             
-            // Fidget Detection (Threshold heuristic)
-            if dist > 0.02 { // Adjusted for normalized coords (0-1)
+            // Normalize distance based on face size
+            // Larger face (closer) = more movement pixels for same action
+            // divide by face width to get "relative movement"
+            // Face width is usually 0.2 - 0.5 of screen
+            let faceWidth = face.boundingBox.width
+            let normalizedDist = rawDist / max(faceWidth, 0.1) // Avoid div by zero
+            
+            movementVelocities.append(normalizedDist)
+            
+            // Fidget Detection (Relative Threshold)
+            // 0.05 normalized distance is significant relative to face size
+            if normalizedDist > 0.05 {
                 // Debounce events
                 if fidgetSpikes.last.map({ now - $0 > 1.0 }) ?? true {
                     fidgetSpikes.append(now)
@@ -218,7 +227,7 @@ class VideoAnalyzer: NSObject, ObservableObject {
         // UI State Update
         var uiState: PresenceState = .grounded
         if !isLookingAtCamera { uiState = .distracted }
-        else if (movementVelocities.last ?? 0) > 0.02 { uiState = .fidgeting }
+        else if (movementVelocities.last ?? 0) > 0.05 { uiState = .fidgeting }
         else { uiState = .grounded }
         
         // Critical Optimization: Throttle Main Thread Updates

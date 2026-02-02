@@ -1,4 +1,5 @@
 import SwiftUI
+import NaturalLanguage
 
 struct AIAssistantView: View {
     @Environment(\.dismiss) var dismiss
@@ -123,12 +124,11 @@ struct AIAssistantView: View {
     }
     
     func generateResponse(for query: String) -> String {
-        let lowerQuery = query.lowercased()
+        // Advanced Intent Analysis using NaturalLanguage
+        let intent = analyzeIntent(from: query)
         
-        // Simple Intent Matching based on "stats" context (English + Localized)
-        
-        let confidenceKeys = ["confidence", languageManager.t("Confidence").lowercased()]
-        if confidenceKeys.contains(where: { lowerQuery.contains($0) }) {
+        switch intent {
+        case .checkConfidence:
             let changeStr: String
             if progressViewModel.confidenceChange > 0 {
                 changeStr = "\(languageManager.t("improving by")) \(progressViewModel.confidenceChange)% \(languageManager.t("this week"))"
@@ -138,36 +138,93 @@ struct AIAssistantView: View {
                 changeStr = languageManager.t("steady")
             }
             return "\(languageManager.t("Your current confidence score is")) \(progressViewModel.currentConfidence)%. \(languageManager.t("You are")) \(changeStr). \(languageManager.t("Keep practicing to boost your projection!"))"
-        }
-        
-        let practiceKeys = ["practice", "time", "day", "min", languageManager.t("Daily Goal").lowercased()]
-        if practiceKeys.contains(where: { lowerQuery.contains($0) }) {
+            
+        case .checkPractice:
             return "\(languageManager.t("You've practiced for")) \(progressViewModel.practiceMinutesToday) \(languageManager.t("minutes today against your goal of")) \(progressViewModel.practiceGoalMinutes) \(languageManager.t("minutes. Every minute counts!"))"
-        }
-        
-        let hesitationKeys = ["hesitation", "pause", languageManager.t("Hesitation").lowercased()]
-        if hesitationKeys.contains(where: { lowerQuery.contains($0) }) {
+            
+        case .checkHesitation:
             return "\(languageManager.t("Regarding hesitations:")) \(progressViewModel.hesitationScore). \(languageManager.t("Reducing pauses helps with flow state."))"
-        }
-        
-        let wordKeys = ["word", "count", languageManager.t("Words practiced total").lowercased()]
-        if wordKeys.contains(where: { lowerQuery.contains($0) }) {
+            
+        case .checkWords:
             return "\(languageManager.t("You have spoken a total of")) \(progressViewModel.wordsPracticed) \(languageManager.t("words across all your sessions. That's a lot of practice!"))"
-        }
-        
-        let clarityKeys = ["clarity", languageManager.t("Clarity").lowercased()]
-        if clarityKeys.contains(where: { lowerQuery.contains($0) }) {
+            
+        case .checkClarity:
             let advice = progressViewModel.clarityScore > 80 ? languageManager.t("You're speaking very clearly!") : languageManager.t("Try to articulate more precisely.")
             return "\(languageManager.t("Your clarity score is currently")) \(progressViewModel.clarityScore)%. \(advice)"
-        }
-        
-        let progressKeys = ["progress", "stats", "summary", languageManager.t("Progress").lowercased(), languageManager.t("Your Progress 🚀").lowercased()]
-        if progressKeys.contains(where: { lowerQuery.contains($0) }) {
+            
+        case .checkSummary:
             return "\(languageManager.t("Here is your summary:"))\n• \(languageManager.t("Confidence")): \(progressViewModel.currentConfidence)%\n• \(languageManager.t("Today's Practice:")) \(progressViewModel.practiceMinutesToday) min\n• \(languageManager.t("Hesitation:")) \(progressViewModel.hesitationScore)\n\n\(languageManager.t("You're doing great!"))"
+            
+        case .greeting:
+             return languageManager.t("Hello! I'm ready to help you analyze your speaking.")
+            
+        case .unknown:
+            return languageManager.t("I can help you analyze your speaking progress. Try asking: \"How is my confidence?\" or \"How much have I practiced today?\"")
+        }
+    }
+    
+    // MARK: - Natural Language Processing
+    
+    enum UserIntent {
+        case checkConfidence
+        case checkPractice
+        case checkHesitation
+        case checkWords
+        case checkClarity
+        case checkSummary
+        case greeting
+        case unknown
+    }
+    
+    private func analyzeIntent(from text: String) -> UserIntent {
+        let tagger = NLTagger(tagSchemes: [.lemma, .nameType])
+        tagger.string = text
+        
+        var foundLemmas: Set<String> = []
+        
+        tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .lemma) { tag, tokenRange in
+            if let lemma = tag?.rawValue {
+                foundLemmas.insert(lemma.lowercased())
+            } else {
+                // Fallback to original word if lemma fails
+                let word = String(text[tokenRange]).lowercased()
+                foundLemmas.insert(word)
+            }
+            return true
         }
         
-        // Default
-        return languageManager.t("I can help you analyze your speaking progress. Try asking: \"How is my confidence?\" or \"How much have I practiced today?\"")
+        // Intelligent Matching based on Lemmas (Root words)
+        // e.g. "practicing", "practiced", "practices" -> "practice"
+        
+        if foundLemmas.contains("confidence") || foundLemmas.contains("confident") {
+            return .checkConfidence
+        }
+        
+        if foundLemmas.contains("practice") || foundLemmas.contains("goal") || foundLemmas.contains("minute") || foundLemmas.contains("time") {
+            return .checkPractice
+        }
+        
+        if foundLemmas.contains("hesitation") || foundLemmas.contains("hesitate") || foundLemmas.contains("pause") || foundLemmas.contains("um") {
+            return .checkHesitation
+        }
+        
+        if foundLemmas.contains("word") || foundLemmas.contains("speak") || foundLemmas.contains("total") {
+            return .checkWords
+        }
+        
+        if foundLemmas.contains("clarity") || foundLemmas.contains("clear") || foundLemmas.contains("articulate") {
+            return .checkClarity
+        }
+        
+        if foundLemmas.contains("summary") || foundLemmas.contains("stat") || foundLemmas.contains("progress") {
+            return .checkSummary
+        }
+        
+        if foundLemmas.contains("hello") || foundLemmas.contains("hi") || foundLemmas.contains("hey") {
+            return .greeting
+        }
+        
+        return .unknown
     }
 }
 
