@@ -332,9 +332,10 @@ struct AudioPlaybackView: View {
     @State private var lastZoomScale: CGFloat = 1.0
     
     var body: some View {
-        VStack {
+        ScrollView {
+            VStack {
 
-            Spacer()
+                Color.clear.frame(height: 40)
             
             Text(formattedTime(isDragging ? scrubbingTime : voiceRecorder.currentTime))
                 .font(.system(size: 40, weight: .light, design: .monospaced))
@@ -437,7 +438,7 @@ struct AudioPlaybackView: View {
             .frame(height: 280)
             .background(Theme.secondaryBackground)
             
-            Spacer()
+            Color.clear.frame(height: 20)
             
             Button(action: {
                 HapticManager.shared.light() // Light haptic for play/pause
@@ -475,16 +476,19 @@ struct AudioPlaybackView: View {
                     .padding().background(Theme.secondaryBackground).cornerRadius(10)
                     
                     if !analysis.transcription.isEmpty {
-                        ScrollView {
-                            Text(analysis.transcription).font(.body).foregroundStyle(Theme.secondaryLabel).padding()
-                        }
-                        .frame(maxHeight: 150)
-                        .background(Theme.tertiaryBackground)
-                        .cornerRadius(10)
+                        Text(analysis.transcription)
+                            .font(.body)
+                            .foregroundStyle(Theme.secondaryLabel)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Theme.tertiaryBackground)
+                            .cornerRadius(10)
                     }
                 }
                 .padding(.horizontal)
             }
+            }
+            .padding(.bottom, 20)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background)
