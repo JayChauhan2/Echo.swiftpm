@@ -29,6 +29,10 @@ class VideoAnalyzer: NSObject, ObservableObject {
     private var faceRatios: [Double] = []
     private var centerDeviations: [Double] = []
     private var postureIssueFrames: Int = 0
+
+    // Presence smoothing
+    private var consecutiveNoFaceFrames: Int = 0
+    private var consecutiveFaceFrames: Int = 0
     
     // Vision
     private var faceLandmarksRequest: VNDetectFaceLandmarksRequest?
@@ -63,7 +67,15 @@ class VideoAnalyzer: NSObject, ObservableObject {
         centerDeviations.removeAll()
         postureIssueFrames = 0
         
-        currentPresence = .absent
+        previousFaceCenter = nil
+        lastUiState = .absent
+        recentPresenceStates.removeAll()
+        
+        consecutiveNoFaceFrames = 0
+        consecutiveFaceFrames = 0
+        // Start optimistic: assume present until proven absent to avoid initial flicker
+        currentPresence = .present
+        lastUiState = .present
         recordingStartTime = Date()
     }
     
@@ -108,6 +120,10 @@ class VideoAnalyzer: NSObject, ObservableObject {
         // Final Score
         // Weighted average of components
         let score = (stillness + (gazeMetrics.engagementRatio) + (framingHit.isCenteredScore)) / 3.0
+
+        if events.isEmpty {
+            addEvent(timestamp: 0.0, type: .present, desc: "Session recorded")
+        }
         
         return VideoAnalysisResult(
             events: events,
@@ -124,13 +140,22 @@ class VideoAnalyzer: NSObject, ObservableObject {
         let now = Date().timeIntervalSince(startTime)
         
         guard let results = request.results as? [VNFaceObservation], let face = results.first else {
-            DispatchQueue.main.async { self.currentPresence = .absent }
-            // End current streak if any
-            if currentGazeStreak > 0 {
-                maxGazeStreak = max(maxGazeStreak, currentGazeStreak)
-                currentGazeStreak = 0
+            consecutiveNoFaceFrames += 1
+            consecutiveFaceFrames = 0
+            // Only mark absent after ~0.3s without a face (~9 frames at 30fps)
+            if consecutiveNoFaceFrames > 9 {
+                DispatchQueue.main.async { self.currentPresence = .absent }
+                lastUiState = .absent
             }
             return
+        }
+        
+        consecutiveFaceFrames += 1
+        consecutiveNoFaceFrames = 0
+        if consecutiveFaceFrames >= 2 && lastUiState == .absent { // require 2 frames to flip back
+            addEvent(timestamp: now, type: .present, desc: "Face detected")
+            DispatchQueue.main.async { self.currentPresence = .present }
+            lastUiState = .present
         }
         
         totalFaceFrames += 1
@@ -152,10 +177,10 @@ class VideoAnalyzer: NSObject, ObservableObject {
             movementVelocities.append(normalizedDist)
             
             // Fidget Detection (Relative Threshold)
-            // 0.05 normalized distance is significant relative to face size
-            if normalizedDist > 0.05 {
+            // 0.04 normalized distance is significant relative to face size
+            if normalizedDist > 0.04 {
                 // Debounce events
-                if fidgetSpikes.last.map({ now - $0 > 1.0 }) ?? true {
+                if fidgetSpikes.last.map({ now - $0 > 0.8 }) ?? true {
                     fidgetSpikes.append(now)
                     addEvent(timestamp: now, type: .fidgeting, desc: "High movement detected")
                 }
@@ -167,13 +192,16 @@ class VideoAnalyzer: NSObject, ObservableObject {
         // Simple heuristic: Face yaw close to 0 OR eyes present
         var isLookingAtCamera = false
         if let yaw = face.yaw {
-            if abs(yaw.doubleValue) < 0.2 { // ~10 degrees
+            if abs(yaw.doubleValue) < 0.35 { // changed from 0.2 to 0.35 for more tolerance
                 isLookingAtCamera = true
             }
         } else {
             // Fallback if no yaw: Assume looking if face is detected (rough)
             isLookingAtCamera = true
         }
+        
+        recentPresenceStates.append(isLookingAtCamera ? .present : .distracted)
+        if recentPresenceStates.count > 10 { recentPresenceStates.removeFirst() }
         
         if isLookingAtCamera {
             gazeContactFrames += 1
@@ -200,7 +228,7 @@ class VideoAnalyzer: NSObject, ObservableObject {
                     let ratio = width / height
                     
                     // Wide mouth relative to height usually indicates smile
-                    if ratio > 2.5 {
+                    if ratio > 2.2 && face.boundingBox.width > 0.18 {
                          if now - lastSmileTime > 2.0 {
                              smileTimestamps.append(now)
                              lastSmileTime = now
@@ -227,10 +255,10 @@ class VideoAnalyzer: NSObject, ObservableObject {
         // UI State Update
         var uiState: PresenceState = .grounded
         if !isLookingAtCamera { uiState = .distracted }
-        else if (movementVelocities.last ?? 0) > 0.05 { uiState = .fidgeting }
+        else if (movementVelocities.last ?? 0) > 0.04 { uiState = .fidgeting }
         else { uiState = .grounded }
-        
-        // Critical Optimization: Throttle Main Thread Updates
+
+        // Do not set to .absent here because we have a face; only the no-face branch can set Absent
         if uiState != lastUiState {
             lastUiState = uiState
             DispatchQueue.main.async {
@@ -251,8 +279,8 @@ extension VideoAnalyzer: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         
-        // Create request handler (orientation fixed for portrait selfie)
-        let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .leftMirrored, options: [:])
+        let orientation: CGImagePropertyOrientation = .leftMirrored
+        let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: orientation, options: [:])
         
         do {
             if let request = faceLandmarksRequest {

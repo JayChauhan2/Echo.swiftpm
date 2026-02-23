@@ -3,14 +3,18 @@ import Speech
 import AVFoundation
 
 class AudioAnalyzer: NSObject {
-    
-    // MARK: - Analysis Methods
+    private let fillerWords: Set<String> = ["um", "uh", "hmm", "er", "ah", "like"]
     
     // MARK: - Analysis Methods
     
     func analyze(url: URL) async throws -> AudioAnalysisResult {
         // 1. Transcription & Timing (Offline)
         let (transcription, segments, speechRate, pauseFreq) = try await analyzeSpeech(url: url)
+        
+        // Compute filler density (per minute)
+        let durationMin = max((segments.last?.timestamp ?? 0 + (segments.last?.duration ?? 0)) / 60.0, 0.01)
+        let fillerCount = segments.reduce(0) { $0 + (fillerWords.contains($1.substring.lowercased().trimmingCharacters(in: .punctuationCharacters)) ? 1 : 0) }
+        let fillersPerMinute = Double(fillerCount) / durationMin
         
         // 2. Audio Signal Analysis
         let (volumeStability, _) = try analyzeAudioSignal(url: url)
@@ -19,7 +23,8 @@ class AudioAnalyzer: NSObject {
         let analysisSegments = analyzeGranularSegments(
             segments: segments,
             transcription: transcription,
-            volumeStability: volumeStability
+            volumeStability: volumeStability,
+            fillersPerMinute: fillersPerMinute
         )
         
         // Determine global state based on weighted duration of states
@@ -48,13 +53,10 @@ class AudioAnalyzer: NSObject {
     
     // MARK: - Private Helpers
     
-    private func analyzeGranularSegments(segments: [SFTranscriptionSegment], transcription: String, volumeStability: Double) -> [AnalysisSegment] {
+    private func analyzeGranularSegments(segments: [SFTranscriptionSegment], transcription: String, volumeStability: Double, fillersPerMinute: Double) -> [AnalysisSegment] {
         var analysisSegments: [AnalysisSegment] = []
         var currentPhrase: [SFTranscriptionSegment] = []
         var lastEndTime: TimeInterval = 0.0
-        
-        // Filler words list (lowercase for comparison)
-        let fillers: Set<String> = ["um", "uh", "hmm", "er", "ah", "like"]
         
         var searchRange = transcription.startIndex..<transcription.endIndex
         
@@ -77,10 +79,10 @@ class AudioAnalyzer: NSObject {
             }
             
             // 1. Check for significant pause/gap
-            if gap > 0.5 {
+            if gap > 0.35 {
                 // Analyze pending phrase first
                 if !currentPhrase.isEmpty {
-                    if let phraseSegment = analyzePhrase(currentPhrase, volumeStability: volumeStability) {
+                    if let phraseSegment = analyzePhrase(currentPhrase, volumeStability: volumeStability, fillersPerMinute: fillersPerMinute) {
                         analysisSegments.append(phraseSegment)
                     }
                     currentPhrase = []
@@ -92,15 +94,17 @@ class AudioAnalyzer: NSObject {
                 if !followsPunctuation {
                      // Add the gap as a Hesitant segment
                     analysisSegments.append(AnalysisSegment(startTime: lastEndTime, endTime: segment.timestamp, state: .hesitant))
+                } else {
+                    // Natural sentence pause: mark as neutral for richer timeline
+                    analysisSegments.append(AnalysisSegment(startTime: lastEndTime, endTime: segment.timestamp, state: .neutral))
                 }
-                // Else: Neutral/Gray (implicitly handled by lack of segment)
             }
             
             // 2. Check for explicit filler word
-            if fillers.contains(word) {
+            if fillerWords.contains(word) {
                 // Flush pending phrase
                 if !currentPhrase.isEmpty {
-                    if let phraseSegment = analyzePhrase(currentPhrase, volumeStability: volumeStability) {
+                    if let phraseSegment = analyzePhrase(currentPhrase, volumeStability: volumeStability, fillersPerMinute: fillersPerMinute) {
                         analysisSegments.append(phraseSegment)
                     }
                     currentPhrase = []
@@ -120,7 +124,7 @@ class AudioAnalyzer: NSObject {
             
             // Flush at end
             if index == segments.count - 1 {
-                if let phraseSegment = analyzePhrase(currentPhrase, volumeStability: volumeStability) {
+                if let phraseSegment = analyzePhrase(currentPhrase, volumeStability: volumeStability, fillersPerMinute: fillersPerMinute) {
                     analysisSegments.append(phraseSegment)
                 }
             }
@@ -129,7 +133,7 @@ class AudioAnalyzer: NSObject {
         return analysisSegments
     }
     
-    private func analyzePhrase(_ words: [SFTranscriptionSegment], volumeStability: Double) -> AnalysisSegment? {
+    private func analyzePhrase(_ words: [SFTranscriptionSegment], volumeStability: Double, fillersPerMinute: Double = 0) -> AnalysisSegment? {
         guard let first = words.first, let last = words.last else { return nil }
         
         let startTime = first.timestamp
@@ -146,6 +150,10 @@ class AudioAnalyzer: NSObject {
         
         let avgConfidence = words.reduce(0.0) { $0 + Double($1.confidence) } / Double(wordCount)
         
+        // Filler penalty: if filler rate is high, cap positivity
+        let highFiller = fillersPerMinute > 8.0
+        let moderateFiller = fillersPerMinute > 4.0
+        
         let state: CommunicationState
         
         // --- Per-Clause Heuristics ---
@@ -155,24 +163,30 @@ class AudioAnalyzer: NSObject {
             state = .unclear
         }
         // Grounded: Calm, steady pace, high clarity
-        // WPM Range: 90 - 130
-        else if localWPM >= 80 && localWPM <= 140 && avgConfidence > 0.8 {
+        // WPM Range: 70 - 150
+        else if localWPM >= 70 && localWPM <= 150 && avgConfidence > 0.8 && !highFiller {
             state = .grounded
         }
         // Confident: Faster but clear, or just solid stats
-        // WPM Range: 130 - 180 (or just generally high confidence + stability)
-        else if (localWPM > 130 && localWPM < 190 && avgConfidence > 0.7) || (avgConfidence > 0.9 && volumeStability > 0.5) {
+        // WPM Range: 120 - 200 (or just generally high confidence + stability)
+        else if ((localWPM > 120 && localWPM < 200 && avgConfidence > 0.65) || (avgConfidence > 0.85 && volumeStability > 0.45)) && !moderateFiller {
             state = .confident
         }
         // Hesitant Check for whole phrase (if very slow)
-        else if localWPM < 70 && wordCount > 2 {
+        else if localWPM < 65 && wordCount > 2 {
             state = .hesitant
         }
         else {
             state = .neutral
         }
         
-        return AnalysisSegment(startTime: startTime, endTime: endTime, state: state)
+        var finalState = state
+        if highFiller && (state == .confident || state == .grounded) {
+            finalState = .hesitant
+        } else if moderateFiller && state == .confident {
+            finalState = .neutral
+        }
+        return AnalysisSegment(startTime: startTime, endTime: endTime, state: finalState)
     }
     
     private func inferGlobalState(segments: [AnalysisSegment], globalRate: Double, globalStability: Double, globalPauseFreq: Double) -> CommunicationState {
@@ -198,12 +212,22 @@ class AudioAnalyzer: NSObject {
         
         let totalTime = segments.last?.endTime ?? 1.0
         
-        if let dominant = maxDurationState, durations[dominant]! > (totalTime * 0.4) {
+        if let dominant = maxDurationState, durations[dominant]! > (totalTime * 0.3) {
             return dominant
         }
         
+        // If pauses are high, likely fillers/hesitation: strengthen hesitant classification
+        if globalPauseFreq > 14 {
+            return .hesitant
+        }
+        
+        // Strong pause override
+        if globalPauseFreq > 10 {
+            return .hesitant
+        }
+        
         // Fallback to original global heuristics if no clear dominant segment state
-        if globalStability > 0.6 && globalPauseFreq < 8.0 && globalRate > 100 && globalRate < 160 {
+        if globalStability > 0.6 && globalPauseFreq < 7.0 && globalRate > 90 && globalRate < 170 {
             return .confident
         }
         if globalPauseFreq > 12 {
@@ -247,12 +271,12 @@ class AudioAnalyzer: NSObject {
                 let wpm = Double(segments.count) / durationInMinutes
                 
                 // Calculate Pause Frequency
-                // A "pause" is a significant gap between segments. Let's say > 0.5s
+                // A "pause" is a significant gap between segments. Let's say > 0.35s
                 var pauseCount = 0
                 for i in 0..<segments.count - 1 {
                     let endCurrent = segments[i].timestamp + segments[i].duration
                     let startNext = segments[i+1].timestamp
-                    if startNext - endCurrent > 0.5 {
+                    if startNext - endCurrent > 0.35 {
                         pauseCount += 1
                     }
                 }
@@ -306,3 +330,4 @@ class AudioAnalyzer: NSObject {
         return (stability, Double(meanRMS))
     }
 }
+
