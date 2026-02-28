@@ -79,6 +79,11 @@ class LanguageManager: ObservableObject {
             
             // CameraRecordView
             "Camera access required": "Acceso a la cámara requerido",
+            "Allow camera access in settings to start recording your presence.": "Permite el acceso a la cámara en los ajustes para empezar a grabar tu presencia.",
+            "Microphone access required": "Acceso al micrófono requerido",
+            "Allow microphone access in settings to start recording your voice.": "Permite el acceso al micrófono en los ajustes para empezar a grabar tu voz.",
+            "Speech Recognition required": "Reconocimiento de voz requerido",
+            "Echo uses speech recognition to analyze your clarity and pace. Please enable it in settings.": "Echo utiliza el reconocimiento de voz para analizar tu claridad y ritmo. Por favor, actívalo en los ajustes.",
             "Open Settings": "Abrir Ajustes",
             "Recording Presence...": "Grabando Presencia...",
             "Analyzing Presence...": "Analizando Presencia...",
@@ -213,6 +218,11 @@ class LanguageManager: ObservableObject {
             "Analyzing Audio...": "Analyse audio...",
             
             "Camera access required": "Accès caméra requis",
+            "Allow camera access in settings to start recording your presence.": "Autorisez l'accès à la caméra dans les réglages pour commencer à enregistrer votre présence.",
+            "Microphone access required": "Accès micro requis",
+            "Allow microphone access in settings to start recording your voice.": "Autorisez l'accès au micro dans les réglages pour commencer à enregistrer votre voix.",
+            "Speech Recognition required": "Reconnaissance vocale requise",
+            "Echo uses speech recognition to analyze your clarity and pace. Please enable it in settings.": "Echo utilise la reconnaissance vocale pour analyser votre clarté et votre rythme. Veuillez l'activer dans les réglages.",
             "Open Settings": "Ouvrir les paramètres",
             "Recording Presence...": "Enregistrement présence...",
             "Analyzing Presence...": "Analyse présence...",
@@ -314,6 +324,11 @@ class LanguageManager: ObservableObject {
             "Analyzing Audio...": "音声分析中...",
             
             "Camera access required": "カメラへのアクセスが必要です",
+            "Allow camera access in settings to start recording your presence.": "設定でカメラへのアクセスを許可して、プレゼンスの記録を開始してください。",
+            "Microphone access required": "マイクへのアクセスが必要です",
+            "Allow microphone access in settings to start recording your voice.": "設定でマイクへのアクセスを許可して、音声の録音を開始してください。",
+            "Speech Recognition required": "音声認識が必要です",
+            "Echo uses speech recognition to analyze your clarity and pace. Please enable it in settings.": "Echoは音声認識を使用して、明瞭さとペースを分析します。設定で有効にしてください。",
             "Open Settings": "設定を開く",
             "Recording Presence...": "プレゼンスを記録中...",
             "Analyzing Presence...": "プレゼンス分析中...",
@@ -415,6 +430,11 @@ class LanguageManager: ObservableObject {
             "Analyzing Audio...": "Audio analysieren...",
             
             "Camera access required": "Kamerazugriff erforderlich",
+            "Allow camera access in settings to start recording your presence.": "Erlaube den Kamerazugriff in den Einstellungen, um mit der Aufnahme deiner Präsenz zu beginnen.",
+            "Microphone access required": "Mikrofonzugriff erforderlich",
+            "Allow microphone access in settings to start recording your voice.": "Erlaube den Mikrofonzugriff in den Einstellungen, um mit der Aufnahme deiner Stimme zu beginnen.",
+            "Speech Recognition required": "Spracherkennung erforderlich",
+            "Echo uses speech recognition to analyze your clarity and pace. Please enable it in settings.": "Echo verwendet Spracherkennung, um deine Klarheit und dein Tempo zu analysieren. Bitte aktiviere sie in den Einstellungen.",
             "Open Settings": "Einstellungen öffnen",
             "Recording Presence...": "Präsenz aufnehmen...",
             "Analyzing Presence...": "Präsenz analysieren...",
