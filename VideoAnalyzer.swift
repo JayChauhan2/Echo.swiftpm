@@ -228,8 +228,8 @@ class VideoAnalyzer: NSObject, ObservableObject {
                     let ratio = width / height
                     
                     // Wide mouth relative to height usually indicates smile
-                    if ratio > 2.2 && face.boundingBox.width > 0.18 {
-                         if now - lastSmileTime > 2.0 {
+                    if ratio > 2.0 { // Reduced from 2.2 to 2.0 for higher sensitivity
+                         if now - lastSmileTime > 1.5 { // Reduced from 2.0 to 1.5
                              smileTimestamps.append(now)
                              lastSmileTime = now
                              addEvent(timestamp: now, type: .smiling, desc: "Smile detected")

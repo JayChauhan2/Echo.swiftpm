@@ -65,7 +65,8 @@ class ProgressViewModel: ObservableObject {
         // 3. Clarity
         // Derived from: High Volume Stability + Low Pauses
         // Let's create a synthetic "Clarity" score from 0-100
-        if let lastAnalysis = sortedRecordings.last?.analysis {
+        // Fix: Find the MOST RECENT valid audio analysis, even if it's not the last recording
+        if let lastAnalysis = sortedRecordings.reversed().compactMap({ $0.analysis }).first {
             // Pause Frequency: normal is ~0-10 pauses/min. High is > 15.
             // Stability: 1.0 is stable.
             

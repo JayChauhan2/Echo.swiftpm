@@ -168,8 +168,8 @@ class AudioAnalyzer: NSObject {
             state = .grounded
         }
         // Confident: Faster but clear, or just solid stats
-        // WPM Range: 120 - 200 (or just generally high confidence + stability)
-        else if ((localWPM > 120 && localWPM < 200 && avgConfidence > 0.65) || (avgConfidence > 0.85 && volumeStability > 0.45)) && !moderateFiller {
+        // WPM Range: 120 - 220 (or just generally high confidence + stability)
+        else if ((localWPM > 120 && localWPM < 220 && avgConfidence > 0.6) || (avgConfidence > 0.8 && volumeStability > 0.4)) && !moderateFiller {
             state = .confident
         }
         // Hesitant Check for whole phrase (if very slow)
@@ -227,7 +227,7 @@ class AudioAnalyzer: NSObject {
         }
         
         // Fallback to original global heuristics if no clear dominant segment state
-        if globalStability > 0.6 && globalPauseFreq < 7.0 && globalRate > 90 && globalRate < 170 {
+        if globalStability > 0.4 && globalPauseFreq < 8.0 && globalRate > 85 && globalRate < 210 {
             return .confident
         }
         if globalPauseFreq > 12 {

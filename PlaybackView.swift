@@ -136,6 +136,11 @@ struct VideoPlaybackView: View {
                             if let video = recording.videoAnalysis {
                                 TimelineLane(duration: recording.duration, events: video.events.filter { $0.type == .fidgeting }, baseColor: .yellow)
                             }
+
+                            // Lane 4: Smiles (Pink/Clear)
+                            if let video = recording.videoAnalysis {
+                                TimelineLane(duration: recording.duration, events: video.events.filter { $0.type == .smiling }, baseColor: .pink)
+                            }
                         }
                         .padding(.vertical, 4)
                         

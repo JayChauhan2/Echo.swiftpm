@@ -68,6 +68,7 @@ struct LibraryView: View {
                                             if !recording.isVideo {
                                                 playbackVoiceRecorder.loadRecording(recording)
                                             }
+                                            selectedRecording = recording
                                             showPlayback = true
                                         }
                                     }) {
