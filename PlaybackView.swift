@@ -62,6 +62,7 @@ struct VideoPlaybackView: View {
     let recording: Recording
     @ObservedObject var storage: RecordingStorage
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @EnvironmentObject var languageManager: LanguageManager
     
     @State private var player: AVPlayer?
     @State private var currentTime: TimeInterval = 0
@@ -342,6 +343,7 @@ struct AudioPlaybackView: View {
     @ObservedObject var voiceRecorder: VoiceRecorder
     @ObservedObject var storage: RecordingStorage
     let recording: Recording
+    @EnvironmentObject var languageManager: LanguageManager
     
     // ... Original Audio Logic State ...
     @State private var isDragging = false

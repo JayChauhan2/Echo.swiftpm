@@ -35,16 +35,17 @@ struct RecordView: View {
                             .fill(
                                 RadialGradient(gradient: Gradient(colors: [.red.opacity(0.6), .red.opacity(0.0)]), center: .center, startRadius: 0, endRadius: 400)
                             )
-                            .blur(radius: 50)
+                            .blur(radius: 60)
                             .scaleEffect(1.0 + CGFloat(voiceRecorder.currentAmplitude) * 2.0)
-                            .position(x: geo.size.width / 2, y: geo.size.height * 0.8)
+                            .position(x: geo.size.width / 2, y: geo.size.height)
                             .animation(.easeOut(duration: 0.1), value: voiceRecorder.currentAmplitude)
                     }
+                    .ignoresSafeArea()
                 }
                 
                 VStack(spacing: 0) {
                     Spacer()
-                     MotivationalMessageView()
+                    MotivationalMessageView()
                     Spacer()
                 }
                 .ignoresSafeArea()
@@ -53,6 +54,19 @@ struct RecordView: View {
                     Spacer()
                     
                     // Record Button
+                    Button(action: {
+                        handleAudioRecording()
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(voiceRecorder.isRecording ? Color.red : Theme.tint)
+                                .frame(width: 80, height: 80)
+                                .shadow(color: (voiceRecorder.isRecording ? Color.red : Theme.tint).opacity(0.3), radius: 10)
+                            
+                            Image(systemName: voiceRecorder.isRecording ? "stop.fill" : "mic.fill")
+                                .font(.system(size: 35, weight: .semibold))
+                                .foregroundStyle(.white)
+                        }
                     }
                     .accessibilityLabel(voiceRecorder.isRecording ? languageManager.t("Stop Recording") : languageManager.t("Start Recording"))
                     .accessibilityHint(voiceRecorder.isRecording ? languageManager.t("Stops the current audio recording and starts analysis") : languageManager.t("Starts a new audio recording"))

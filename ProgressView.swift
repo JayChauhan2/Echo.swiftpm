@@ -14,36 +14,31 @@ struct ProgressView: View {
         NavigationStack {
             ScrollView {
                 // Bento Grid
-                LazyVGrid(columns: [
-                    GridItem(.flexible(), spacing: 16),
-                    GridItem(.flexible(), spacing: 16)
-                ], spacing: 16) {
-                    Text(languageManager.t("Your Progress Insights"))
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .accessibilityAddTraits(.isHeader)
-                        .gridCellColumns(2)
-                        .padding(.vertical, 8)
-                    // Practice Goal
-                    PracticeGoalBox(minutes: viewModel.practiceMinutesToday, goal: viewModel.practiceGoalMinutes)
-                        .frame(minHeight: 180)
-                    
-                    // Confidence Snapshot
-                    ConfidenceSnapshotBox(score: viewModel.currentConfidence, currentChange: viewModel.confidenceChange)
-                        .frame(minHeight: 180)
+                Grid(verticalSpacing: 16) {
+                    GridRow {
+                        // Practice Goal
+                        PracticeGoalBox(minutes: viewModel.practiceMinutesToday, goal: viewModel.practiceGoalMinutes)
+                            .frame(minHeight: 180)
+                        
+                        // Confidence Snapshot
+                        ConfidenceSnapshotBox(score: viewModel.currentConfidence, currentChange: viewModel.confidenceChange)
+                            .frame(minHeight: 180)
+                    }
                     
                     // Confidence Chart (Full Width Span)
                     ConfidenceChartBox(trend: viewModel.confidenceTrend)
                         .frame(minHeight: 220)
                         .gridCellColumns(2)
                     
-                    // Clarity
-                    ClarityBox(score: viewModel.clarityScore, status: viewModel.clarityStatus)
-                        .frame(minHeight: 160)
-                    
-                    // Hesitation
-                    HesitationBox(status: viewModel.hesitationScore)
-                        .frame(minHeight: 160)
+                    GridRow {
+                        // Clarity
+                        ClarityBox(score: viewModel.clarityScore, status: viewModel.clarityStatus)
+                            .frame(minHeight: 160)
+                        
+                        // Hesitation
+                        HesitationBox(status: viewModel.hesitationScore)
+                            .frame(minHeight: 160)
+                    }
                 }
                 .padding(.horizontal)
                 
