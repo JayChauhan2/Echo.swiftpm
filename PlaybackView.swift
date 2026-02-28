@@ -222,35 +222,43 @@ struct VideoPlaybackView: View {
                      LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)], spacing: 16) {
                          // 1. Gaze
                          MetricCard(
-                             title: "Eye Contact",
+                             title: languageManager.t("Eye Contact"),
                              value: String(format: "%.0f%%", (analysis.gaze?.engagementRatio ?? 0) * 100),
                              icon: "eye.fill",
                              color: .blue
                          )
+                         .accessibilityElement(children: .combine)
+                         .accessibilityLabel("\(languageManager.t("Eye Contact")): \(String(format: "%.0f%%", (analysis.gaze?.engagementRatio ?? 0) * 100))")
                          
                          // 2. Movement
                          MetricCard(
-                             title: "Stillness",
+                             title: languageManager.t("Stillness"),
                              value: String(format: "%.0f%%", (analysis.movement?.stillnessScore ?? 0) * 100),
                              icon: "figure.stand",
                              color: (analysis.movement?.stillnessScore ?? 0) > 0.7 ? .green : .orange
                          )
+                         .accessibilityElement(children: .combine)
+                         .accessibilityLabel("\(languageManager.t("Stillness")): \(String(format: "%.0f%%", (analysis.movement?.stillnessScore ?? 0) * 100))")
                          
                          // 3. Expressions
                          MetricCard(
-                             title: "Smiles",
+                             title: languageManager.t("Smiles"),
                              value: "\(analysis.expression?.smileCount ?? 0)",
                              icon: "mouth",
                              color: .pink
                          )
+                         .accessibilityElement(children: .combine)
+                         .accessibilityLabel("\(languageManager.t("Smiles")): \(analysis.expression?.smileCount ?? 0)")
                          
                          // 4. Framing
                          MetricCard(
-                             title: "Framing",
-                             value: (analysis.framing?.isCenteredScore ?? 0) > 0.8 ? "Good" : "Adjust",
+                             title: languageManager.t("Framing"),
+                             value: (analysis.framing?.isCenteredScore ?? 0) > 0.8 ? languageManager.t("Good") : languageManager.t("Adjust"),
                              icon: "viewfinder",
                              color: (analysis.framing?.isCenteredScore ?? 0) > 0.8 ? .green : .yellow
                          )
+                         .accessibilityElement(children: .combine)
+                         .accessibilityLabel("\(languageManager.t("Framing")): \((analysis.framing?.isCenteredScore ?? 0) > 0.8 ? languageManager.t("Good") : languageManager.t("Adjust"))")
                      }
                      .padding()
                  }
@@ -463,13 +471,15 @@ struct AudioPlaybackView: View {
                     voiceRecorder.startPlayback()
                 }
             }) {
-                Image(systemName: voiceRecorder.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 80, height: 80)
-                    .foregroundStyle(Theme.tint)
-            }
-            .padding()
+                    Image(systemName: voiceRecorder.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 80, height: 80)
+                        .foregroundStyle(Theme.tint)
+                }
+                .accessibilityLabel(voiceRecorder.isPlaying ? languageManager.t("Pause") : languageManager.t("Play"))
+                .accessibilityAddTraits(.isButton)
+                .padding()
             
             if let analysis = recording.analysis {
                 VStack(spacing: 15) {

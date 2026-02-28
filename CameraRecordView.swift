@@ -79,29 +79,11 @@ struct CameraRecordView: View {
                         .padding(.bottom, 20)
                         .accessibilityLabel(languageManager.t("Switch Camera"))
                         
-                        Button(action: {
-                            handleCameraRecording()
-                        }) {
-                            ZStack {
-                                if cameraManager.isRecording {
-                                    Image(systemName: "stop.circle.fill")
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: 100, height: 100)
-                                        .foregroundColor(.red)
-                                } else {
-                                    Image(systemName: "circle.fill") // Outer ring
-                                        .resizable()
-                                        .frame(width: 100, height: 100)
-                                        .foregroundColor(.white)
-                                    
-                                    Image(systemName: "circle.fill") // Inner red button
-                                        .resizable()
-                                        .frame(width: 75, height: 75)
-                                        .foregroundColor(.red)
-                                }
                             }
                         }
+                        .accessibilityLabel(cameraManager.isRecording ? languageManager.t("Stop Recording") : languageManager.t("Start Recording"))
+                        .accessibilityHint(cameraManager.isRecording ? languageManager.t("Stops the camera recording and starts analysis") : languageManager.t("Starts a new camera recording with a 3-second countdown"))
+                        .accessibilityAddTraits(.isButton)
                         .accessibilityLabel(cameraManager.isRecording == true ? languageManager.t("Stop Recording") : languageManager.t("Start Recording"))
                         .accessibilityAddTraits(.isButton)
                         

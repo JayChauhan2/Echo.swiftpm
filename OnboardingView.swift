@@ -65,6 +65,7 @@ struct OnboardingView: View {
                             .lineSpacing(4)
                             .padding(.horizontal, 32)
                             .accessibilityLabel(generatePersonalizedMessage())
+                            .accessibilityAddTraits(.isStaticText)
                         
                         if onboardingManager.isFirstLaunch {
                             // First-time feature highlights

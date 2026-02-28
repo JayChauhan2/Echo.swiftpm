@@ -51,6 +51,8 @@ struct LibraryView: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.top, 100)
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("\(languageManager.t("Your library is empty")). \(languageManager.t("Recordings you save will appear here"))")
                         } else {
                             LazyVGrid(columns: [
                                 GridItem(.adaptive(minimum: horizontalSizeClass == .regular ? 180 : 100), spacing: 20)
@@ -134,6 +136,8 @@ struct LibraryView: View {
                             HapticManager.shared.light()
                             isSelectionMode = true
                         }
+                        .accessibilityLabel(languageManager.t("Select recordings"))
+                        .accessibilityHint(languageManager.t("Enables selection mode to delete multiple recordings"))
                     }
                 }
                 
@@ -147,6 +151,8 @@ struct LibraryView: View {
                                 .font(.body)
                                 .foregroundStyle(Theme.tint)
                         }
+                        .accessibilityLabel(languageManager.t("AI Assistant"))
+                        .accessibilityHint(languageManager.t("Open AI assistant to analyze your recordings"))
                     } else if !selectedRecordingIDs.isEmpty {
                         Button(role: .destructive) {
                              HapticManager.shared.warning()

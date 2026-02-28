@@ -53,15 +53,10 @@ struct RecordView: View {
                     Spacer()
                     
                     // Record Button
-                    Button(action: {
-                        handleAudioRecording()
-                    }) {
-                        Image(systemName: voiceRecorder.isRecording ? "stop.circle.fill" : "mic.circle.fill")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 100, height: 100)
-                            .foregroundStyle(Theme.brandPrimary.gradient)
                     }
+                    .accessibilityLabel(voiceRecorder.isRecording ? languageManager.t("Stop Recording") : languageManager.t("Start Recording"))
+                    .accessibilityHint(voiceRecorder.isRecording ? languageManager.t("Stops the current audio recording and starts analysis") : languageManager.t("Starts a new audio recording"))
+                    .accessibilityAddTraits(.isButton)
                     
                     Text(voiceRecorder.isRecording ? languageManager.t("Recording...") : languageManager.t("Tap to record"))
                         .font(.headline)
@@ -141,6 +136,7 @@ struct RecordView: View {
         if voiceRecorder.isRecording {
             HapticManager.shared.heavy() // Heavy haptic when stopping
             voiceRecorder.stopRecording()
+            UIAccessibility.post(notification: .announcement, argument: languageManager.t("Recording stopped. Analyzing audio..."))
             withAnimation { isAnalyzing = true }
             
             Task { @MainActor in
@@ -166,6 +162,7 @@ struct RecordView: View {
         } else {
             HapticManager.shared.medium() // Medium haptic when starting
             voiceRecorder.startRecording()
+            UIAccessibility.post(notification: .announcement, argument: languageManager.t("Recording started"))
         }
     }
 }

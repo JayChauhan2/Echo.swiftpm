@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct Theme {
-    static let brandPrimary = Color.red
-    static let tint = Color.red
+    static let brandPrimary = Color(uiColor: .systemRed)
+    static let tint = Color(uiColor: .systemRed)
     
     // Semantic Backgrounds that adapt to Light/Dark mode
     static let background = Color(uiColor: .systemBackground)

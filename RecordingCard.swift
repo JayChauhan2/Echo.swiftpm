@@ -33,6 +33,10 @@ struct RecordingCard: View {
         .frame(maxWidth: .infinity)
         .aspectRatio(1, contentMode: .fit)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(recording.isVideo ? languageManager.t("Video recording") : languageManager.t("Audio recording")), \(formatDate(recording.date)), \(formatDuration(recording.duration))")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint(languageManager.t("Double tap to play recording"))
     }
     
     private func formatDate(_ date: Date) -> String {

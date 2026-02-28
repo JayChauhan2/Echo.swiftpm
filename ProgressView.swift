@@ -18,6 +18,12 @@ struct ProgressView: View {
                     GridItem(.flexible(), spacing: 16),
                     GridItem(.flexible(), spacing: 16)
                 ], spacing: 16) {
+                    Text(languageManager.t("Your Progress Insights"))
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .accessibilityAddTraits(.isHeader)
+                        .gridCellColumns(2)
+                        .padding(.vertical, 8)
                     // Practice Goal
                     PracticeGoalBox(minutes: viewModel.practiceMinutesToday, goal: viewModel.practiceGoalMinutes)
                         .frame(minHeight: 180)
@@ -356,7 +362,7 @@ struct HesitationBox: View {
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
-                Text("Hesitation")
+                Text(languageManager.t("Hesitation"))
                     .font(.headline)
                     .foregroundStyle(Theme.secondaryLabel)
                 Spacer()
