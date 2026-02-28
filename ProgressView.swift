@@ -34,7 +34,7 @@ struct ProgressView: View {
                     // Bottom Row: Clarity + Hesitation
                     HStack(spacing: 16) {
                         // Box 4: Clarity (Purple theme)
-                        ClarityBox(score: viewModel.clarityScore)
+                        ClarityBox(score: viewModel.clarityScore, status: viewModel.clarityStatus)
                             .frame(maxWidth: .infinity)
                             .frame(minHeight: 160)
                         
@@ -284,7 +284,8 @@ struct ConfidenceChartBox: View {
 // MARK: - Box 4: Clarity
 struct ClarityBox: View {
     @EnvironmentObject var languageManager: LanguageManager
-    let score: Int
+    let score: Int?
+    let status: String
     @State private var animatedScore: Double = 0
     
     var body: some View {
@@ -302,14 +303,19 @@ struct ClarityBox: View {
             
             // Simple Bar
             VStack(alignment: .leading, spacing: 5) {
-                AnimatableNumberText(value: animatedScore, suffix: "%")
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundStyle(Theme.primaryLabel)
+                if let score = score {
+                    AnimatableNumberText(value: animatedScore, suffix: "%")
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .foregroundStyle(Theme.primaryLabel)
+                } else {
+                    Text("--%")
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .foregroundStyle(Theme.secondaryLabel)
+                }
                 
-
-                
-                Text(score > 80 ? languageManager.t("Crystal clear") : languageManager.t("Good effort"))
+                Text(status)
                     .font(.caption)
                     .foregroundStyle(.gray)
                 
@@ -318,7 +324,7 @@ struct ClarityBox: View {
                         Capsule().fill(Color.gray.opacity(0.3))
                         Capsule()
                             .fill(Color.purple)
-                            .frame(width: geo.size.width * (CGFloat(score) / 100.0))
+                            .frame(width: geo.size.width * (CGFloat(score ?? 0) / 100.0))
                     }
                 }
                 .frame(height: 8)
@@ -334,14 +340,16 @@ struct ClarityBox: View {
                 .stroke(Theme.tertiaryBackground, lineWidth: 1)
         )
         .onAppear {
-            withAnimation(.easeOut(duration: 1.5)) {
-                animatedScore = Double(score)
+            if let score = score {
+                withAnimation(.easeOut(duration: 1.5)) {
+                    animatedScore = Double(score)
+                }
             }
         }
         // Accessibility
         .accessibilityElement(children: .combine)
         .accessibilityLabel(languageManager.t("Clarity Score"))
-        .accessibilityValue("\(score) \(languageManager.t("percent")). \(score > 80 ? languageManager.t("Crystal clear") : languageManager.t("Good effort"))")
+        .accessibilityValue(score != nil ? "\(score!) \(languageManager.t("percent")). \(status)" : status)
     }
 }
 

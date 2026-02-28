@@ -153,8 +153,12 @@ struct AIAssistantView: View {
             return "\(languageManager.t("You have spoken a total of")) \(progressViewModel.wordsPracticed) \(languageManager.t("words across all your sessions. That's a lot of practice!"))"
             
         case .checkClarity:
-            let advice = progressViewModel.clarityScore > 80 ? languageManager.t("You're speaking very clearly!") : languageManager.t("Try to articulate more precisely.")
-            return "\(languageManager.t("Your clarity score is currently")) \(progressViewModel.clarityScore)%. \(advice)"
+            if let score = progressViewModel.clarityScore {
+                let advice = score > 80 ? languageManager.t("You're speaking very clearly!") : languageManager.t("Try to articulate more precisely.")
+                return "\(languageManager.t("Your clarity score is currently")) \(score)%. \(advice)"
+            } else {
+                return languageManager.t("I don't have enough data to analyze your clarity yet. Start recording to see your results!")
+            }
             
         case .checkSummary:
             return "\(languageManager.t("Here is your summary:"))\n• \(languageManager.t("Confidence")): \(progressViewModel.currentConfidence)%\n• \(languageManager.t("Today's Practice:")) \(progressViewModel.practiceMinutesToday) min\n• \(languageManager.t("Hesitation:")) \(progressViewModel.hesitationScore)\n\n\(languageManager.t("You're doing great!"))"

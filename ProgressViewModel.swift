@@ -7,7 +7,8 @@ class ProgressViewModel: ObservableObject {
     @Published var confidenceTrend: [Double] = []
     @Published var currentConfidence: Int = 0
     @Published var confidenceChange: Int = 0 // Percentage change
-    @Published var clarityScore: Int = 0
+    @Published var clarityScore: Int? = nil
+    @Published var clarityStatus: String = LanguageManager.shared.t("No analysis yet")
     @Published var hesitationScore: String = LanguageManager.shared.t("Stable") // "↓ 12%", "Stable", etc.
     @Published var wordsPracticed: Int = 0
     @Published var wordCountChange: Int = 0
@@ -74,9 +75,12 @@ class ProgressViewModel: ObservableObject {
             let pauseScore = max(0.0, 1.0 - (lastAnalysis.pauseFrequency / 20.0))
             
             let rawClarity = (stability * 0.4) + (pauseScore * 0.6) // Weight pauses more
-            clarityScore = Int(rawClarity * 100)
+            let score = Int(rawClarity * 100)
+            clarityScore = score
+            clarityStatus = score > 80 ? LanguageManager.shared.t("Crystal clear") : LanguageManager.shared.t("Good effort")
         } else {
-            clarityScore = 0
+            clarityScore = nil
+            clarityStatus = LanguageManager.shared.t("No analysis yet")
         }
         
         // 4. Hesitation
