@@ -9,6 +9,7 @@ struct PlaybackView: View {
     
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var languageManager: LanguageManager
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @State private var showDeleteAlert = false
     
     var body: some View {
@@ -60,6 +61,7 @@ struct PlaybackView: View {
 struct VideoPlaybackView: View {
     let recording: Recording
     @ObservedObject var storage: RecordingStorage
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
     @State private var player: AVPlayer?
     @State private var currentTime: TimeInterval = 0

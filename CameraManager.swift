@@ -186,6 +186,19 @@ class CameraManager: NSObject, ObservableObject {
             }
         }
     }
+    
+    func stopSession() {
+        if session.isRunning {
+            session.stopRunning()
+        }
+        // Clear delegates to prevent callbacks after deallocation
+        videoOutput.setSampleBufferDelegate(nil, queue: nil)
+    }
+    
+    deinit {
+        stopSession()
+        NotificationCenter.default.removeObserver(self)
+    }
 }
 
 extension CameraManager: AVCaptureFileOutputRecordingDelegate {

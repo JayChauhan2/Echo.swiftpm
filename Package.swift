@@ -27,7 +27,10 @@ let package = Package(
                 .phone
             ],
             supportedInterfaceOrientations: [
-                .portrait
+                .portrait,
+                .landscapeLeft,
+                .landscapeRight,
+                .portraitUpsideDown
             ],
             capabilities: [
                 .microphone(purposeString: "Echo needs access to your microphone to record audio."),

@@ -30,14 +30,16 @@ struct RecordView: View {
                 
                 // Recording Ripple Effect
                 if voiceRecorder.isRecording {
-                    Circle()
-                        .fill(
-                            RadialGradient(gradient: Gradient(colors: [.red.opacity(0.6), .red.opacity(0.0)]), center: .center, startRadius: 0, endRadius: 400)
-                        )
-                        .blur(radius: 50)
-                        .scaleEffect(1.0 + CGFloat(voiceRecorder.currentAmplitude) * 2.0)
-                        .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height + 20)
-                        .animation(.easeOut(duration: 0.1), value: voiceRecorder.currentAmplitude)
+                    GeometryReader { geo in
+                        Circle()
+                            .fill(
+                                RadialGradient(gradient: Gradient(colors: [.red.opacity(0.6), .red.opacity(0.0)]), center: .center, startRadius: 0, endRadius: 400)
+                            )
+                            .blur(radius: 50)
+                            .scaleEffect(1.0 + CGFloat(voiceRecorder.currentAmplitude) * 2.0)
+                            .position(x: geo.size.width / 2, y: geo.size.height * 0.8)
+                            .animation(.easeOut(duration: 0.1), value: voiceRecorder.currentAmplitude)
+                    }
                 }
                 
                 VStack(spacing: 0) {

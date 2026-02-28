@@ -6,6 +6,7 @@ struct LibraryView: View {
     @StateObject var playbackVoiceRecorder = VoiceRecorder()
     @EnvironmentObject var effectsState: GlobalEffectsState
     @EnvironmentObject var languageManager: LanguageManager
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
     @State private var isSelectionMode = false
     @State private var selectedRecordingIDs = Set<UUID>()
@@ -52,8 +53,8 @@ struct LibraryView: View {
                             .padding(.top, 100)
                         } else {
                             LazyVGrid(columns: [
-                                GridItem(.adaptive(minimum: 100), spacing: 15) // Adaptive for dynamic type/screens
-                            ], spacing: 15) {
+                                GridItem(.adaptive(minimum: horizontalSizeClass == .regular ? 180 : 120), spacing: 20)
+                            ], spacing: 20) {
                                 ForEach(Array(storage.recordings.enumerated()), id: \.element.id) { index, recording in
                                     Button(action: {
                                         if isSelectionMode {

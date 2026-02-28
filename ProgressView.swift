@@ -2,8 +2,9 @@ import SwiftUI
 import Charts // Try using Charts framework, or fallback to Path if unavailable in swiftpm
 
 struct ProgressView: View {
-    @StateObject var viewModel: ProgressViewModel
     @EnvironmentObject var languageManager: LanguageManager
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @StateObject var viewModel: ProgressViewModel
     
     init(storage: RecordingStorage) {
         _viewModel = StateObject(wrappedValue: ProgressViewModel(storage: storage))
@@ -13,46 +14,40 @@ struct ProgressView: View {
         NavigationStack {
             ScrollView {
                 // Bento Grid
-                VStack(spacing: 16) {
-                    // Top Row: Practice Goal (Hero) + Confidence Snapshot
-                    HStack(spacing: 16) {
-                        // Box 1: Practice Goal (Blue/Purple theme)
-                        PracticeGoalBox(minutes: viewModel.practiceMinutesToday, goal: viewModel.practiceGoalMinutes)
-                            .frame(maxWidth: .infinity)
-                            .frame(minHeight: 180) // Use minHeight for dynamic type support
-                        
-                        // Box 2: Confidence Snapshot (Green theme)
-                        ConfidenceSnapshotBox(score: viewModel.currentConfidence, currentChange: viewModel.confidenceChange)
-                            .frame(maxWidth: .infinity)
-                            .frame(minHeight: 180)
-                    }
+                LazyVGrid(columns: [
+                    GridItem(.flexible(), spacing: 16),
+                    GridItem(.flexible(), spacing: 16)
+                ].prefix(horizontalSizeClass == .regular ? 2 : 1).map { $0 }, spacing: 16) {
+                    // Practice Goal
+                    PracticeGoalBox(minutes: viewModel.practiceMinutesToday, goal: viewModel.practiceGoalMinutes)
+                        .frame(minHeight: 180)
                     
-                    // Box 3: Confidence Chart (Full Width)
+                    // Confidence Snapshot
+                    ConfidenceSnapshotBox(score: viewModel.currentConfidence, currentChange: viewModel.confidenceChange)
+                        .frame(minHeight: 180)
+                    
+                    // Confidence Chart (Full Width Span)
                     ConfidenceChartBox(trend: viewModel.confidenceTrend)
                         .frame(minHeight: 220)
+                        .gridCellColumns(horizontalSizeClass == .regular ? 2 : 1)
                     
-                    // Bottom Row: Clarity + Hesitation
-                    HStack(spacing: 16) {
-                        // Box 4: Clarity (Purple theme)
-                        ClarityBox(score: viewModel.clarityScore, status: viewModel.clarityStatus)
-                            .frame(maxWidth: .infinity)
-                            .frame(minHeight: 160)
-                        
-                        // Box 5: Hesitation (Orange theme)
-                        HesitationBox(status: viewModel.hesitationScore)
-                            .frame(maxWidth: .infinity)
-                            .frame(minHeight: 160)
-                    }
+                    // Clarity
+                    ClarityBox(score: viewModel.clarityScore, status: viewModel.clarityStatus)
+                        .frame(minHeight: 160)
                     
-                    // Optional: Words Practiced
-                    HStack {
-                        Text("\(languageManager.t("Words practiced total")): \(viewModel.wordsPracticed)")
-                            .font(.caption)
-                            .foregroundStyle(Color.secondary)
-                    }
-                    .padding(.top)
+                    // Hesitation
+                    HesitationBox(status: viewModel.hesitationScore)
+                        .frame(minHeight: 160)
                 }
                 .padding(.horizontal)
+                
+                // Optional: Words Practiced
+                HStack {
+                    Text("\(languageManager.t("Words practiced total")): \(viewModel.wordsPracticed)")
+                        .font(.caption)
+                        .foregroundStyle(Color.secondary)
+                }
+                .padding(.top)
                 .padding(.bottom, 40)
             }
             .navigationTitle(languageManager.t("Progress"))

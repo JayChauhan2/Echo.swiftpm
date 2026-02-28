@@ -178,10 +178,8 @@ struct CameraRecordView: View {
                 }
             }
             .onDisappear {
-                // Stop session when view disappears to save resources (on background thread)
-                DispatchQueue.global(qos: .userInitiated).async { [weak cameraManager] in
-                    cameraManager?.session.stopRunning()
-                }
+                // Explicitly stop session and clear delegates to prevent crashes during view transitions (especially on iPad)
+                cameraManager.stopSession()
             }
             .overlay {
                 if !cameraManager.permissionGranted && !isInitializing {

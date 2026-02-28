@@ -18,44 +18,64 @@ struct ContentView: View {
     @StateObject var appearanceManager = AppearanceManager.shared
     @StateObject var onboardingManager = OnboardingManager()
 
-    var body: some View {
-        ZStack {
-            // Global Particle Layer - Removed in favor of per-view instances
-            // Color.black.ignoresSafeArea()
-            // ParticleView(amplitude: effectsState.amplitude, touchLocation: effectsState.touchLocation).ignoresSafeArea()
-            
-            TabView {
-                // Tab 1: Record (Audio)
-                RecordView(storage: storage)
-                    .tabItem {
-                        Label(languageManager.t("Voice"), systemImage: "mic.fill")
-                    }
-                
-                // Tab 2: Camera
-                CameraRecordView(storage: storage)
-                    .tabItem {
-                        Label(languageManager.t("Camera"), systemImage: "video.fill")
-                    }
-                
-                // Tab 3: Library
-                LibraryView(storage: storage)
-                    .tabItem {
-                        Label(languageManager.t("Library"), systemImage: "books.vertical.fill")
-                    }
-                
-                // Tab 4: Progress (Analytics)
-                ProgressView(storage: storage)
-                    .tabItem {
-                        Label(languageManager.t("Progress"), systemImage: "chart.bar.fill")
-                    }
-                
-                // Tab 5: Settings
-                SettingsView(storage: storage)
-                    .tabItem {
-                        Label(languageManager.t("Settings"), systemImage: "ellipsis.circle.fill")
-                    }
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @State private var selectedTab: Tab? = .voice
+
+    enum Tab: String, CaseIterable, Identifiable {
+        case voice, camera, library, progress, settings
+        var id: String { self.rawValue }
+        
+        var label: String {
+            switch self {
+            case .voice: return "Voice"
+            case .camera: return "Camera"
+            case .library: return "Library"
+            case .progress: return "Progress"
+            case .settings: return "Settings"
             }
-            .accentColor(Theme.tint) // Highlight color
+        }
+        
+        var icon: String {
+            switch self {
+            case .voice: return "mic.fill"
+            case .camera: return "video.fill"
+            case .library: return "books.vertical.fill"
+            case .progress: return "chart.bar.fill"
+            case .settings: return "ellipsis.circle.fill"
+            }
+        }
+    }
+
+    var body: some View {
+        Group {
+            if horizontalSizeClass == .regular {
+                NavigationSplitView {
+                    List(selection: $selectedTab) {
+                        ForEach(Tab.allCases) { tab in
+                            NavigationLink(value: tab) {
+                                Label(languageManager.t(tab.label), systemImage: tab.icon)
+                            }
+                        }
+                    }
+                    .navigationTitle("Echo")
+                } detail: {
+                    detailView(for: selectedTab ?? .voice)
+                }
+            } else {
+                TabView(selection: Binding(
+                    get: { selectedTab ?? .voice },
+                    set: { selectedTab = $0 }
+                )) {
+                    ForEach(Tab.allCases) { tab in
+                        detailView(for: tab)
+                            .tabItem {
+                                Label(languageManager.t(tab.label), systemImage: tab.icon)
+                            }
+                            .tag(tab)
+                    }
+                }
+                .accentColor(Theme.brandPrimary)
+            }
         }
         .environmentObject(effectsState)
         .environmentObject(languageManager)
@@ -70,8 +90,23 @@ struct ContentView: View {
                 .environmentObject(languageManager)
         }
         .onAppear {
-            // Show onboarding every time the app launches
             onboardingManager.showOnboarding()
+        }
+    }
+
+    @ViewBuilder
+    private func detailView(for tab: Tab) -> some View {
+        switch tab {
+        case .voice:
+            RecordView(storage: storage)
+        case .camera:
+            CameraRecordView(storage: storage)
+        case .library:
+            LibraryView(storage: storage)
+        case .progress:
+            ProgressView(storage: storage)
+        case .settings:
+            SettingsView(storage: storage)
         }
     }
 }
