@@ -53,20 +53,14 @@ class AIMessageGenerator {
             let remaining = practiceGoalMinutes - practiceMinutesToday
             if remaining == practiceGoalMinutes {
                 // No practice yet today
-                let lang = LanguageManager.shared
-                if lang.currentLanguage == .spanish {
-                    return "¡Comienza tu día con fuerza! Completa \(practiceGoalMinutes) minutos de práctica para alcanzar tu meta diaria."
-                } else {
-                    return "Start your day strong! Complete \(practiceGoalMinutes) minutes of practice to reach your daily goal."
-                }
+                let key = "Start your day strong! Complete %d minutes of practice to reach your daily goal."
+                let format = LanguageManager.shared.t(key)
+                return String(format: format, practiceGoalMinutes)
             } else {
                 // Some practice done, but not at goal yet
-                let lang = LanguageManager.shared
-                if lang.currentLanguage == .spanish {
-                    return "¡Estás progresando! Solo \(remaining) minutos más para alcanzar tu meta diaria de \(practiceGoalMinutes) minutos."
-                } else {
-                    return "You're making progress! Just \(remaining) more minutes to reach your daily goal of \(practiceGoalMinutes) minutes."
-                }
+                let key = "You're making progress! Just %d more minutes to reach your daily goal of %d minutes."
+                let format = LanguageManager.shared.t(key)
+                return String(format: format, remaining, practiceGoalMinutes)
             }
         }
         

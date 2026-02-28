@@ -204,7 +204,11 @@ class LanguageManager: ObservableObject {
              "Smart Analysis": "Análisis Inteligente",
              "Did you know Echo spots filler words like 'um' and 'ah' to help you sound pro?": "¿Sabías que Echo detecta muletillas como 'eh' y 'em' para ayudarte a sonar profesional?",
              "Measure Your Impact": "Mide Tu Impacto",
-             "See exactly how confident you appear with advanced AI analysis": "Mira exactamente cuán seguro pareces con el análisis avanzado de IA"
+             "See exactly how confident you appear with advanced AI analysis": "Mira exactamente cuán seguro pareces con el análisis avanzado de IA",
+
+             // AI Message Generator Additions
+             "Start your day strong! Complete %d minutes of practice to reach your daily goal.": "¡Comienza tu día con fuerza! Completa %d minutos de práctica para alcanzar tu meta diaria.",
+             "You're making progress! Just %d more minutes to reach your daily goal of %d minutes.": "¡Estás progresando! Solo %d minutos más para alcanzar tu meta diaria de %d minutos."
         ],
         .french: [
             "Voice": "Voix",
@@ -308,9 +312,41 @@ class LanguageManager: ObservableObject {
             "Very few pauses": "Très peu de pauses",
             "Normal flow": "Flux normal",
             "High pauses": "Beaucoup de pauses",
-            "No analysis yet": "Pas encore d'analyse",
             "No data this week": "Pas de données cette semaine",
-            "Analyzing...": "Analyse en cours..."
+            "Analyzing...": "Analyse en cours...",
+
+            // Onboarding
+            "Welcome to Echo": "Bienvenue sur Echo",
+            "Welcome Back": "Bon retour",
+            "Welcome to Echo! This app helps you improve your communication skills through voice and video analysis. Practice regularly, track your progress, and watch your confidence grow.": "Bienvenue sur Echo ! Cette application vous aide à améliorer vos compétences en communication grâce à l'analyse vocale et vidéo. Pratiquez régulièrement, suivez vos progrès et voyez votre confiance grandir.",
+            "Ready to start your journey? Record your first practice session and discover insights about your communication style.": "Prêt à commencer votre voyage ? Enregistrez votre première séance d'entraînement et découvrez des informations sur votre style de communication.",
+            "Keep going! Consistency is key. Try focusing on speaking slowly and clearly in your next session.": "Continuez ! La cohérence est la clé. Essayez de vous concentrer sur une élocution lente et claire lors de votre prochaine session.",
+            "Excellent work! Your confidence is improving. Consider increasing your practice goal to challenge yourself further.": "Excellent travail ! Votre confiance s'améliore. Envisagez d'augmenter votre objectif de pratique pour vous mettre davantage au défi.",
+            "You're doing great! Your confidence is strong and you've hit your daily goal. Keep up the amazing work!": "Vous faites un excellent travail ! Votre confiance est forte et vous avez atteint votre objectif quotidien. Continuez ce travail incroyable !",
+            "Welcome back! Ready to continue improving your communication skills? Let's make today count.": "Bon retour ! Prêt à continuer à améliorer vos compétences en communication ? Faisons en sorte que cette journée compte.",
+            "I'm Ready!": "Je suis prêt !",
+            "I'm Ready! Dismiss onboarding": "Je suis prêt ! Ignorer l'intégration",
+            "Double tap to start using Echo": "Appuyez deux fois pour commencer à utiliser Echo",
+            "Voice Recording": "Enregistrement vocal",
+            "Record and analyze your voice for clarity and confidence": "Enregistrez et analysez votre voix pour la clarté et la confiance",
+            "Video Analysis": "Analyse vidéo",
+            "Capture your presence and body language": "Capturez votre présence et votre langage corporel",
+            "Track Progress": "Suivre les progrès",
+            "Monitor your improvement over time": "Suivez votre amélioration au fil du temps",
+            "AI Insights": "Insights IA",
+            "Get personalized feedback and suggestions": "Obtenez des commentaires et des suggestions personnalisés",
+
+            // Returning User Onboarding
+            "Level Up Your Voice": "Améliorez votre voix",
+            "Continue practicing to unlock your full vocal potential": "Continuez à pratiquer pour libérer tout votre potentiel vocal",
+            "Smart Analysis": "Analyse intelligente",
+            "Did you know Echo spots filler words like 'um' and 'ah' to help you sound pro?": "Saviez-vous qu'Echo repère les mots de remplissage comme 'euh' et 'ah' pour vous aider à paraître professionnel ?",
+            "Measure Your Impact": "Mesurez votre impact",
+            "See exactly how confident you appear with advanced AI analysis": "Voyez exactement à quel point vous semblez confiant grâce à l'analyse IA avancée",
+
+            // AI Message Generator Additions
+            "Start your day strong! Complete %d minutes of practice to reach your daily goal.": "Commencez votre journée en force ! Complétez %d minutes de pratique pour atteindre votre objectif quotidien.",
+            "You're making progress! Just %d more minutes to reach your daily goal of %d minutes.": "Vous progressez ! Plus que %d minutes pour atteindre votre objectif quotidien de %d minutes."
         ],
         .japanese: [
             "Voice": "音声",
@@ -414,9 +450,41 @@ class LanguageManager: ObservableObject {
             "Very few pauses": "ほとんどポーズなし",
             "Normal flow": "通常のフロー",
             "High pauses": "ポーズが多い",
-            "No analysis yet": "分析なし",
             "No data this week": "今週のデータなし",
-            "Analyzing...": "分析中..."
+            "Analyzing...": "分析中...",
+
+            // Onboarding
+            "Welcome to Echo": "Echoへようこそ",
+            "Welcome Back": "おかえりなさい",
+            "Welcome to Echo! This app helps you improve your communication skills through voice and video analysis. Practice regularly, track your progress, and watch your confidence grow.": "Echoへようこそ！このアプリは、音声とビデオ分析を通じてコミュニケーションスキルを向上させるのに役立ちます。定期的に練習し、進捗を追跡し、自信が成長するのを見てください。",
+            "Ready to start your journey? Record your first practice session and discover insights about your communication style.": "旅を始める準備はできましたか？最初の練習セッションを録音し、あなたのコミュニケーションスタイルに関する洞察を発見してください。",
+            "Keep going! Consistency is key. Try focusing on speaking slowly and clearly in your next session.": "続けてください！一貫性が重要です。次のセッションでは、ゆっくりと明確に話すことに集中してみてください。",
+            "Excellent work! Your confidence is improving. Consider increasing your practice goal to challenge yourself further.": "素晴らしい仕事です！あなたの自信は向上しています。さらに自分を挑戦するために、練習目標を増やすことを検討してください。",
+            "You're doing great! Your confidence is strong and you've hit your daily goal. Keep up the amazing work!": "素晴らしいです！あなたの自信は強く、毎日の目標を達成しました。この素晴らしい仕事を続けてください！",
+            "Welcome back! Ready to continue improving your communication skills? Let's make today count.": "おかえりなさい！コミュニケーションスキルを向上させ続ける準備はできましたか？今日を大切にしましょう。",
+            "I'm Ready!": "準備完了！",
+            "I'm Ready! Dismiss onboarding": "準備完了！オンボーディングを閉じる",
+            "Double tap to start using Echo": "ダブルタップしてEchoを使い始める",
+            "Voice Recording": "音声録音",
+            "Record and analyze your voice for clarity and confidence": "明瞭さと自信のためにあなたの声を録音し分析する",
+            "Video Analysis": "ビデオ分析",
+            "Capture your presence and body language": "あなたの存在感とボディランゲージを捉える",
+            "Track Progress": "進捗を追跡",
+            "Monitor your improvement over time": "時間の経過とともにあなたの改善を監視する",
+            "AI Insights": "AIインサイト",
+            "Get personalized feedback and suggestions": "パーソナライズされたフィードバックと提案を得る",
+
+            // Returning User Onboarding
+            "Level Up Your Voice": "あなたの声をレベルアップ",
+            "Continue practicing to unlock your full vocal potential": "あなたの声の可能性を最大限に引き出すために練習を続ける",
+            "Smart Analysis": "スマート分析",
+            "Did you know Echo spots filler words like 'um' and 'ah' to help you sound pro?": "Echoが「えーと」や「あー」のようなフィラーワードを特定し、プロのように聞こえるのを助けることをご存知でしたか？",
+            "Measure Your Impact": "あなたの影響を測定",
+            "See exactly how confident you appear with advanced AI analysis": "高度なAI分析で、あなたがどれほど自信を持っているかを正確に確認する",
+
+            // AI Message Generator Additions
+            "Start your day strong! Complete %d minutes of practice to reach your daily goal.": "一日を元気に始めましょう！今日の目標を達成するために、あと%d分間練習しましょう。",
+            "You're making progress! Just %d more minutes to reach your daily goal of %d minutes.": "着実に進歩しています！今日の目標の%d分まで、あと%d分です。"
         ],
         .german: [
             "Voice": "Stimme",
@@ -522,7 +590,40 @@ class LanguageManager: ObservableObject {
             "High pauses": "Viele Pausen",
             "No analysis yet": "Noch keine Analyse",
             "No data this week": "Keine Daten diese Woche",
-            "Analyzing...": "Analysieren..."
+            "Analyzing...": "Analysieren...",
+
+            // Onboarding
+            "Welcome to Echo": "Willkommen bei Echo",
+            "Welcome Back": "Willkommen zurück",
+            "Welcome to Echo! This app helps you improve your communication skills through voice and video analysis. Practice regularly, track your progress, and watch your confidence grow.": "Willkommen bei Echo! Diese App hilft dir, deine Kommunikationsfähigkeiten durch Sprach- und Videoanalyse zu verbessern. Übe regelmäßig, verfolge deinen Fortschritt und sieh zu, wie dein Selbstvertrauen wächst.",
+            "Ready to start your journey? Record your first practice session and discover insights about your communication style.": "Bereit, deine Reise zu beginnen? Nimm deine erste Übungseinheit auf und entdecke Einblicke in deinen Kommunikationsstil.",
+            "Keep going! Consistency is key. Try focusing on speaking slowly and clearly in your next session.": "Bleib dran! Beständigkeit ist der Schlüssel. Versuche, dich in deiner nächsten Sitzung darauf zu konzentrieren, langsam und deutlich zu sprechen.",
+            "Excellent work! Your confidence is improving. Consider increasing your practice goal to challenge yourself further.": "Ausgezeichnete Arbeit! Dein Selbstvertrauen verbessert sich. Erwäge, dein Übungsziel zu erhöhen, um dich weiter herauszufordern.",
+            "You're doing great! Your confidence is strong and you've hit your daily goal. Keep up the amazing work!": "Du machst das großartig! Dein Selbstvertrauen ist stark und du hast dein Tagesziel erreicht. Mach weiter so!",
+            "Welcome back! Ready to continue improving your communication skills? Let's make today count.": "Willkommen zurück! Bereit, deine Kommunikationsfähigkeiten weiter zu verbessern? Lass uns den heutigen Tag nutzen.",
+            "I'm Ready!": "Ich bin bereit!",
+            "I'm Ready! Dismiss onboarding": "Ich bin bereit! Onboarding schließen",
+            "Double tap to start using Echo": "Doppeltippen, um Echo zu starten",
+            "Voice Recording": "Sprachaufnahme",
+            "Record and analyze your voice for clarity and confidence": "Nimm deine Stimme auf und analysiere sie auf Klarheit und Selbstvertrauen",
+            "Video Analysis": "Videoanalyse",
+            "Capture your presence and body language": "Erfasse deine Präsenz und Körpersprache",
+            "Track Progress": "Fortschritt verfolgen",
+            "Monitor your improvement over time": "Verfolge deine Verbesserung im Laufe der Zeit",
+            "AI Insights": "KI-Einblicke",
+            "Get personalized feedback and suggestions": "Erhalte personalisiertes Feedback und Vorschläge",
+
+            // Returning User Onboarding
+            "Level Up Your Voice": "Verbessere deine Stimme",
+            "Continue practicing to unlock your full vocal potential": "Übe weiter, um dein volles stimmliches Potenzial freizuschalten",
+            "Smart Analysis": "Intelligente Analyse",
+            "Did you know Echo spots filler words like 'um' and 'ah' to help you sound pro?": "Wusstest du, dass Echo Füllwörter wie 'ähm' und 'äh' erkennt, um dich professioneller klingen zu lassen?",
+            "Measure Your Impact": "Messe deinen Einfluss",
+            "See exactly how confident you appear with advanced AI analysis": "Sieh genau, wie selbstbewusst du mit fortschrittlicher KI-Analyse wirkst",
+
+            // AI Message Generator Additions
+            "Start your day strong! Complete %d minutes of practice to reach your daily goal.": "Starte stark in den Tag! Schließe %d Minuten Übung ab, um dein tägliches Ziel zu erreichen.",
+            "You're making progress! Just %d more minutes to reach your daily goal of %d minutes.": "Du machst Fortschritte! Nur noch %d Minuten bis zu deinem täglichen Ziel von %d Minuten."
         ]
     ]
 }
