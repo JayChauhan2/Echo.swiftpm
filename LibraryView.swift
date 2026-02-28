@@ -56,15 +56,15 @@ struct LibraryView: View {
                             ], spacing: 15) {
                                 ForEach(Array(storage.recordings.enumerated()), id: \.element.id) { index, recording in
                                     Button(action: {
-                                        HapticManager.shared.light() // Light haptic for selection
                                         if isSelectionMode {
+                                            HapticManager.shared.selection() // Selection haptic
                                             if selectedRecordingIDs.contains(recording.id) {
                                                 selectedRecordingIDs.remove(recording.id)
                                             } else {
                                                 selectedRecordingIDs.insert(recording.id)
                                             }
                                         } else {
-                                            selectedRecording = recording
+                                            HapticManager.shared.light() // Light haptic for opening
                                             if !recording.isVideo {
                                                 playbackVoiceRecorder.loadRecording(recording)
                                             }

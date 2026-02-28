@@ -69,7 +69,10 @@ struct AIAssistantView: View {
                             sendMessage()
                         }
                     
-                    Button(action: sendMessage) {
+                    Button(action: {
+                        HapticManager.shared.light()
+                        sendMessage()
+                    }) {
                         Image(systemName: "arrow.up.circle.fill")
                             .font(.system(size: 32))
                             .foregroundStyle(.red)
@@ -117,6 +120,7 @@ struct AIAssistantView: View {
             let responseText = generateResponse(for: text)
             let aiMsg = ChatMessage(role: .assistant, content: responseText)
             withAnimation {
+                HapticManager.shared.success() // Success haptic when AI responds
                 isTyping = false
                 messages.append(aiMsg)
             }

@@ -97,7 +97,8 @@ class CameraManager: NSObject, ObservableObject {
         // Ensure connection is active
         if let connection = movieOutput.connection(with: .video) {
              if connection.isVideoMirroringSupported {
-                 connection.isVideoMirrored = true // Mirror front camera
+                 let currentPosition = (session.inputs.first(where: { ($0 as? AVCaptureDeviceInput)?.device.hasMediaType(.video) == true }) as? AVCaptureDeviceInput)?.device.position ?? .front
+                 connection.isVideoMirrored = (currentPosition == .front)
              }
              if connection.isVideoOrientationSupported {
                  connection.videoOrientation = .portrait
@@ -127,6 +128,54 @@ class CameraManager: NSObject, ObservableObject {
     
     func setFrameDelegate(_ delegate: AVCaptureVideoDataOutputSampleBufferDelegate) {
         videoOutput.setSampleBufferDelegate(delegate, queue: DispatchQueue(label: "videoQueue"))
+    }
+    
+    func switchCamera() {
+        session.beginConfiguration()
+        
+        // Remove existing video input
+        guard let currentInput = session.inputs.first(where: { input in
+            guard let deviceInput = input as? AVCaptureDeviceInput else { return false }
+            return deviceInput.device.hasMediaType(.video)
+        }) as? AVCaptureDeviceInput else {
+            session.commitConfiguration()
+            return
+        }
+        
+        session.removeInput(currentInput)
+        
+        // Find new device
+        let newPosition: AVCaptureDevice.Position = currentInput.device.position == .front ? .back : .front
+        guard let newDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: newPosition) else {
+            // Fallback to old input if new one fails
+            session.addInput(currentInput)
+            session.commitConfiguration()
+            return
+        }
+        
+        guard let newInput = try? AVCaptureDeviceInput(device: newDevice) else {
+            session.addInput(currentInput)
+            session.commitConfiguration()
+            return
+        }
+        
+        if session.canAddInput(newInput) {
+            session.addInput(newInput)
+        } else {
+            session.addInput(currentInput)
+        }
+        
+        session.commitConfiguration()
+        
+        // Ensure connection is updated if recording
+        if let connection = movieOutput.connection(with: .video) {
+            if connection.isVideoMirroringSupported {
+                connection.isVideoMirrored = (newPosition == .front)
+            }
+            if connection.isVideoOrientationSupported {
+                connection.videoOrientation = .portrait
+            }
+        }
     }
 }
 

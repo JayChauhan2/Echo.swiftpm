@@ -47,6 +47,7 @@ struct PermissionDeniedView: View {
                 }
                 
                 Button(action: {
+                    HapticManager.shared.light()
                     openSettings()
                 }) {
                     Text(languageManager.t("Open Settings"))

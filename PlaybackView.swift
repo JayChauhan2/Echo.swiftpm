@@ -194,10 +194,10 @@ struct VideoPlaybackView: View {
                          .foregroundStyle(.gray)
                      Spacer()
                      Menu {
-                         Button("0.5x") { player?.rate = 0.5 }
-                         Button("1.0x") { player?.rate = 1.0 }
-                         Button("1.5x") { player?.rate = 1.5 }
-                         Button("2.0x") { player?.rate = 2.0 }
+                         Button("0.5x") { HapticManager.shared.light(); player?.rate = 0.5 }
+                         Button("1.0x") { HapticManager.shared.light(); player?.rate = 1.0 }
+                         Button("1.5x") { HapticManager.shared.light(); player?.rate = 1.5 }
+                         Button("2.0x") { HapticManager.shared.light(); player?.rate = 2.0 }
                      } label: {
                          Label(String(format: "%.1fx", player?.rate ?? 1.0), systemImage: "speedometer")
                              .font(.subheadline)
@@ -406,7 +406,11 @@ struct AudioPlaybackView: View {
                                         scrubbingTime = initialScrubTime
                                     }
                                     let dragSeconds = Double(-value.translation.width / pixelsPerSecond)
-                                    scrubbingTime = max(0, min(duration, initialScrubTime + dragSeconds))
+                                    let newTime = max(0, min(duration, initialScrubTime + dragSeconds))
+                                    if abs(newTime - scrubbingTime) > 0.1 { // Only trigger if moved significantly
+                                        HapticManager.shared.selection()
+                                    }
+                                    scrubbingTime = newTime
                                 }
                                 .onEnded { value in
                                     voiceRecorder.seek(to: scrubbingTime)

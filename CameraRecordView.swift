@@ -71,6 +71,20 @@ struct CameraRecordView: View {
                     Spacer()
                     
                     Button(action: {
+                        HapticManager.shared.light()
+                        cameraManager?.switchCamera()
+                    }) {
+                        Image(systemName: "arrow.triangle.2.circlepath.camera.fill")
+                            .font(.title2)
+                            .padding(10)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Circle())
+                            .foregroundStyle(.white)
+                    }
+                    .padding(.bottom, 20)
+                    .accessibilityLabel(languageManager.t("Switch Camera"))
+                    
+                    Button(action: {
                         handleCameraRecording()
                     }) {
                         ZStack {
