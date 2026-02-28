@@ -3,7 +3,7 @@ import SwiftUI
 
 class ProgressViewModel: ObservableObject {
     @Published var practiceMinutesToday: Int = 0
-    @Published var practiceGoalMinutes: Int = 10
+    @AppStorage("practiceGoalMinutes") var practiceGoalMinutes: Int = 10
     @Published var confidenceTrend: [Double] = []
     @Published var currentConfidence: Int = 0
     @Published var confidenceChange: Int = 0 // Percentage change

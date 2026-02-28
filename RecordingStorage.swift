@@ -45,19 +45,42 @@ class RecordingStorage: ObservableObject {
         // Delete from disk asynchronously
         DispatchQueue.global(qos: .background).async { [weak self] in
             guard let self = self else { return }
-            
-            // 1. Delete the metadata JSON
-            let jsonURL = self.recordingsDirectory.appendingPathComponent("\(recording.id.uuidString).json")
-            try? FileManager.default.removeItem(at: jsonURL)
-            
-            // 2. Delete the actual audio file
-            // Note: filename might not be a full path, usually just "filename.m4a"
-            // We assume audio files are in the Documents root (legacy) or we should move them too.
-            // For now, let's look in Document Directory root as per original app behavior
-            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            let audioURL = documentsPath.appendingPathComponent(recording.filename)
-            try? FileManager.default.removeItem(at: audioURL)
+            self.performDiskDeletion(for: recording)
         }
+    }
+    
+    func clearAll() {
+        let currentRecordings = recordings
+        recordings.removeAll()
+        
+        DispatchQueue.global(qos: .background).async { [weak self] in
+            guard let self = self else { return }
+            
+            // 1. Delete all JSON files in the recordings directory
+            if let files = try? FileManager.default.contentsOfDirectory(at: self.recordingsDirectory, includingPropertiesForKeys: nil) {
+                for url in files {
+                    try? FileManager.default.removeItem(at: url)
+                }
+            }
+            
+            // 2. Delete all actual audio files mentioned in the metadata
+            let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            for recording in currentRecordings {
+                let audioURL = documentsPath.appendingPathComponent(recording.filename)
+                try? FileManager.default.removeItem(at: audioURL)
+            }
+        }
+    }
+    
+    private func performDiskDeletion(for recording: Recording) {
+        // 1. Delete the metadata JSON
+        let jsonURL = self.recordingsDirectory.appendingPathComponent("\(recording.id.uuidString).json")
+        try? FileManager.default.removeItem(at: jsonURL)
+        
+        // 2. Delete the actual audio file
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let audioURL = documentsPath.appendingPathComponent(recording.filename)
+        try? FileManager.default.removeItem(at: audioURL)
     }
     
     // MARK: - Persistence Logic

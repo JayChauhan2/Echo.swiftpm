@@ -34,15 +34,25 @@ enum Language: String, CaseIterable, Identifiable {
 class LanguageManager: ObservableObject {
     static let shared = LanguageManager()
     
-    @AppStorage("selectedLanguage") var currentLanguageRaw: String = Language.english.rawValue
+    @Published var currentLanguage: Language = .english
     
-    var currentLanguage: Language {
-        get {
-            return Language(rawValue: currentLanguageRaw) ?? .english
-        }
-        set {
-            currentLanguageRaw = newValue.rawValue
-            objectWillChange.send()
+    init() {
+        updateLanguageToSystemDefault()
+    }
+    
+    func updateLanguageToSystemDefault() {
+        let preferredLanguage = Locale.preferredLanguages.first ?? "en"
+        
+        if preferredLanguage.hasPrefix("es") {
+            currentLanguage = .spanish
+        } else if preferredLanguage.hasPrefix("fr") {
+            currentLanguage = .french
+        } else if preferredLanguage.hasPrefix("ja") {
+            currentLanguage = .japanese
+        } else if preferredLanguage.hasPrefix("de") {
+            currentLanguage = .german
+        } else {
+            currentLanguage = .english
         }
     }
     
@@ -118,6 +128,18 @@ class LanguageManager: ObservableObject {
             "System": "Sistema",
             "Light": "Claro",
             "Dark": "Oscuro",
+            
+            // New Settings
+            "Personalization": "Personalización",
+            "Daily Practice Goal": "Meta diaria de práctica",
+            "minutes": "minutos",
+            "Accessibility": "Accesibilidad",
+            "Haptic Feedback": "Vibración táctil",
+            "Privacy": "Privacidad",
+            "Clear All History": "Borrar todo el historial",
+            "This will permanently delete all your recordings and reset your progress.": "Esto borrará permanentemente todas tus grabaciones y reiniciará tu progreso.",
+            "About": "Acerca de",
+            "Version": "Versión",
             
             // Motivational Messages
              "Ready to Rock Today?": "¿Listo para rockear hoy?",
@@ -259,6 +281,18 @@ class LanguageManager: ObservableObject {
             "Light": "Clair",
             "Dark": "Sombre",
             
+            // New Settings
+            "Personalization": "Personnalisation",
+            "Daily Practice Goal": "Objectif de pratique quotidien",
+            "minutes": "minutes",
+            "Accessibility": "Accessibilité",
+            "Haptic Feedback": "Retour haptique",
+            "Privacy": "Confidentialité",
+            "Clear All History": "Effacer tout l'historique",
+            "This will permanently delete all your recordings and reset your progress.": "Cela supprimera définitivement tous vos enregistrements et réinitialisera vos progrès.",
+            "About": "À propos",
+            "Version": "Version",
+            
             "Ready to Rock Today?": "Prêt pour aujourd'hui?",
             "Time to shine!": "C'est l'heure de briller!",
             "Capture your brilliant thoughts!": "Capturez vos pensées brillantes!",
@@ -397,6 +431,18 @@ class LanguageManager: ObservableObject {
             "Light": "ライト",
             "Dark": "ダーク",
             
+            // New Settings
+            "Personalization": "パーソナライズ",
+            "Daily Practice Goal": "毎日の練習目標",
+            "minutes": "分",
+            "Accessibility": "アクセシビリティ",
+            "Haptic Feedback": "触覚フィードバック",
+            "Privacy": "プライバシー",
+            "Clear All History": "履歴をすべて消去",
+            "This will permanently delete all your recordings and reset your progress.": "これにより、すべての録音が永久に削除され、進捗状況がリセットされます。",
+            "About": "このアプリについて",
+            "Version": "バージョン",
+            
             "Ready to Rock Today?": "今日も頑張る準備はいい？",
             "Time to shine!": "輝く時間です！",
             "Capture your brilliant thoughts!": "素晴らしい考えを記録しよう！",
@@ -534,6 +580,18 @@ class LanguageManager: ObservableObject {
             "System": "System",
             "Light": "Hell",
             "Dark": "Dunkel",
+            
+            // New Settings
+            "Personalization": "Personalisierung",
+            "Daily Practice Goal": "Tägliches Übungsziel",
+            "minutes": "Minuten",
+            "Accessibility": "Barrierefreiheit",
+            "Haptic Feedback": "Haptisches Feedback",
+            "Privacy": "Datenschutz",
+            "Clear All History": "Verlauf löschen",
+            "This will permanently delete all your recordings and reset your progress.": "Dies wird alle deine Aufnahmen dauerhaft löschen und deinen Fortschritt zurücksetzen.",
+            "About": "Über uns",
+            "Version": "Version",
             
              "Ready to Rock Today?": "Bereit loszulegen?",
              "Time to shine!": "Zeit zu glänzen!",

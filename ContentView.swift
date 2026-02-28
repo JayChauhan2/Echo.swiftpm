@@ -50,7 +50,7 @@ struct ContentView: View {
                     }
                 
                 // Tab 5: Settings
-                SettingsView()
+                SettingsView(storage: storage)
                     .tabItem {
                         Label(languageManager.t("Settings"), systemImage: "ellipsis.circle.fill")
                     }
