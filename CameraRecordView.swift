@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct CameraRecordView: View {
-    @State private var cameraManager: CameraManager?
+    @StateObject private var cameraManager = CameraManager()
     @State private var videoAnalyzer: VideoAnalyzer?
     @State private var isInitializing = true
     @ObservedObject var storage: RecordingStorage
@@ -28,13 +28,7 @@ struct CameraRecordView: View {
                             .font(.headline)
                             .foregroundStyle(Theme.secondaryLabel)
                     }
-                } else if let cameraManager = cameraManager, cameraManager.permissionGranted {
-                    CameraPreview(session: cameraManager.session)
-                        .ignoresSafeArea()
-                        .overlay(
-                            Color.black.opacity(cameraManager.isRecording ? 0.0 : 0.2)
-                        )
-                } else if let cameraManager = cameraManager, cameraManager.permissionGranted {
+                } else if cameraManager.permissionGranted {
                     CameraPreview(session: cameraManager.session)
                         .ignoresSafeArea()
                         .overlay(
@@ -42,7 +36,7 @@ struct CameraRecordView: View {
                         )
                 }
                 
-                if let cameraManager = cameraManager, !cameraManager.isRecording {
+                if cameraManager.permissionGranted && !cameraManager.isRecording {
                     VStack {
                         Spacer()
                         MotivationalMessageView(type: .camera)
@@ -53,7 +47,7 @@ struct CameraRecordView: View {
                 }
 
                 VStack(spacing: 0) {
-                    if let cameraManager = cameraManager, let videoAnalyzer = videoAnalyzer, cameraManager.isRecording {
+                    if let videoAnalyzer = videoAnalyzer, cameraManager.isRecording {
                         // Camera Feedback Overlay
                         Text(videoAnalyzer.currentPresence.rawValue)
                             .font(.headline)
@@ -70,51 +64,53 @@ struct CameraRecordView: View {
                     
                     Spacer()
                     
-                    Button(action: {
-                        HapticManager.shared.light()
-                        cameraManager?.switchCamera()
-                    }) {
-                        Image(systemName: "arrow.triangle.2.circlepath.camera.fill")
-                            .font(.title2)
-                            .padding(10)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Circle())
-                            .foregroundStyle(.white)
-                    }
-                    .padding(.bottom, 20)
-                    .accessibilityLabel(languageManager.t("Switch Camera"))
-                    
-                    Button(action: {
-                        handleCameraRecording()
-                    }) {
-                        ZStack {
-                            if let cameraManager = cameraManager, cameraManager.isRecording {
-                                Image(systemName: "stop.circle.fill")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 100, height: 100)
-                                    .foregroundColor(.red)
-                            } else {
-                                Image(systemName: "circle.fill") // Outer ring
-                                    .resizable()
-                                    .frame(width: 100, height: 100)
-                                    .foregroundColor(.white)
-                                
-                                Image(systemName: "circle.fill") // Inner red button
-                                    .resizable()
-                                    .frame(width: 75, height: 75)
-                                    .foregroundColor(.red)
+                    if cameraManager.permissionGranted {
+                        Button(action: {
+                            HapticManager.shared.light()
+                            cameraManager.switchCamera()
+                        }) {
+                            Image(systemName: "arrow.triangle.2.circlepath.camera.fill")
+                                .font(.title2)
+                                .padding(10)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .foregroundStyle(.white)
+                        }
+                        .padding(.bottom, 20)
+                        .accessibilityLabel(languageManager.t("Switch Camera"))
+                        
+                        Button(action: {
+                            handleCameraRecording()
+                        }) {
+                            ZStack {
+                                if cameraManager.isRecording {
+                                    Image(systemName: "stop.circle.fill")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 100, height: 100)
+                                        .foregroundColor(.red)
+                                } else {
+                                    Image(systemName: "circle.fill") // Outer ring
+                                        .resizable()
+                                        .frame(width: 100, height: 100)
+                                        .foregroundColor(.white)
+                                    
+                                    Image(systemName: "circle.fill") // Inner red button
+                                        .resizable()
+                                        .frame(width: 75, height: 75)
+                                        .foregroundColor(.red)
+                                }
                             }
                         }
+                        .accessibilityLabel(cameraManager.isRecording == true ? languageManager.t("Stop Recording") : languageManager.t("Start Recording"))
+                        .accessibilityAddTraits(.isButton)
+                        
+                        Text(cameraManager.isRecording == true ? languageManager.t("Recording Presence...") : languageManager.t("Tap to record"))
+                            .font(.headline)
+                            .padding()
+                            .foregroundStyle(.white)
+                            .shadow(radius: 2)
                     }
-                    .accessibilityLabel(cameraManager?.isRecording == true ? languageManager.t("Stop Recording") : languageManager.t("Start Recording"))
-                    .accessibilityAddTraits(.isButton)
-                    
-                    Text(cameraManager?.isRecording == true ? languageManager.t("Recording Presence...") : languageManager.t("Tap to record"))
-                        .font(.headline)
-                        .padding()
-                        .foregroundStyle(.white)
-                        .shadow(radius: 2)
                     
                     Spacer().frame(height: 50)
                 }
@@ -167,15 +163,17 @@ struct CameraRecordView: View {
                 }
             }
             .onAppear {
-                // Initialize camera asynchronously to avoid blocking UI
-                if cameraManager == nil {
+                // Initialize analyzer if needed
+                if videoAnalyzer == nil {
                     Task {
-                        await initializeCamera()
+                        await initializeAnalyzer()
                     }
                 } else {
                     // Restart session if already initialized (on background thread)
-                    DispatchQueue.global(qos: .userInitiated).async { [weak cameraManager] in
-                        cameraManager?.session.startRunning()
+                    if cameraManager.permissionGranted {
+                        DispatchQueue.global(qos: .userInitiated).async { [weak cameraManager] in
+                            cameraManager?.session.startRunning()
+                        }
                     }
                 }
             }
@@ -186,7 +184,7 @@ struct CameraRecordView: View {
                 }
             }
             .overlay {
-                if let cameraManager = cameraManager, !cameraManager.permissionGranted, !isInitializing {
+                if !cameraManager.permissionGranted && !isInitializing {
                     PermissionDeniedView(
                         icon: "camera.fill",
                         title: "Camera access required",
@@ -197,27 +195,25 @@ struct CameraRecordView: View {
         }
     }
     
-    func initializeCamera() async {
-        // Create managers on background thread
-        let newCameraManager = CameraManager()
+    func initializeAnalyzer() async {
+        // Create analyzer on background thread
         let newVideoAnalyzer = VideoAnalyzer()
         
         // Small delay to ensure view is rendered
         try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
         
         // Set up the connection
-        newCameraManager.setFrameDelegate(newVideoAnalyzer)
+        cameraManager.setFrameDelegate(newVideoAnalyzer)
         
         // Update state on main thread
         await MainActor.run {
-            self.cameraManager = newCameraManager
             self.videoAnalyzer = newVideoAnalyzer
             self.isInitializing = false
         }
     }
     
     func handleCameraRecording() {
-        guard let cameraManager = cameraManager, let videoAnalyzer = videoAnalyzer else { return }
+        guard let videoAnalyzer = videoAnalyzer else { return }
         
         if cameraManager.isRecording {
             HapticManager.shared.heavy() // Heavy haptic when stopping

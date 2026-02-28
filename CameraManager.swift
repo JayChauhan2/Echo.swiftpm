@@ -18,74 +18,83 @@ class CameraManager: NSObject, ObservableObject {
     override init() {
         super.init()
         checkPermission()
+        
+        // Listen for app becoming active to re-check permission
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+    }
+    
+    @objc private func handleAppDidBecomeActive() {
+        checkPermission()
     }
     
     func checkPermission() {
         let status = AVCaptureDevice.authorizationStatus(for: .video)
-        switch status {
-        case .authorized:
-            DispatchQueue.main.async {
+        DispatchQueue.main.async {
+            switch status {
+            case .authorized:
                 self.permissionGranted = true
-            }
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                self?.setupSession()
-            }
-        case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
-                DispatchQueue.main.async {
-                    self?.permissionGranted = granted
-                }
-                if granted {
-                    DispatchQueue.global(qos: .userInitiated).async {
-                        self?.setupSession()
+                self.setupSessionIfNeeded()
+            case .notDetermined:
+                self.permissionGranted = false
+                AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                    DispatchQueue.main.async {
+                        self?.permissionGranted = granted
+                        if granted {
+                            self?.setupSessionIfNeeded()
+                        }
                     }
                 }
-            }
-        case .denied, .restricted:
-            DispatchQueue.main.async {
+            case .denied, .restricted:
                 self.permissionGranted = false
-            }
-        @unknown default:
-            DispatchQueue.main.async {
+            @unknown default:
                 self.permissionGranted = false
             }
         }
     }
     
-    private func setupSession() {
-        session.beginConfiguration()
-        session.sessionPreset = .high
+    private func setupSessionIfNeeded() {
+        guard !session.isRunning && session.inputs.isEmpty else { return }
         
-        // Add Video Input
-        guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front) else { return }
-        guard let videoInput = try? AVCaptureDeviceInput(device: videoDevice) else { return }
-        
-        if session.canAddInput(videoInput) {
-            session.addInput(videoInput)
-        }
-        
-        // Add Audio Input
-        if let audioDevice = AVCaptureDevice.default(for: .audio),
-           let audioInput = try? AVCaptureDeviceInput(device: audioDevice) {
-            if session.canAddInput(audioInput) {
-                session.addInput(audioInput)
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+            
+            self.session.beginConfiguration()
+            self.session.sessionPreset = .high
+            
+            // Add Video Input
+            guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front) else { return }
+            guard let videoInput = try? AVCaptureDeviceInput(device: videoDevice) else { return }
+            
+            if self.session.canAddInput(videoInput) {
+                self.session.addInput(videoInput)
             }
+            
+            // Add Audio Input
+            if let audioDevice = AVCaptureDevice.default(for: .audio),
+               let audioInput = try? AVCaptureDeviceInput(device: audioDevice) {
+                if self.session.canAddInput(audioInput) {
+                    self.session.addInput(audioInput)
+                }
+            }
+            
+            // Add Movie Output
+            if self.session.canAddOutput(self.movieOutput) {
+                self.session.addOutput(self.movieOutput)
+            }
+            
+            // Add Video Data Output (for analysis)
+            if self.session.canAddOutput(self.videoOutput) {
+                self.session.addOutput(self.videoOutput)
+            }
+            
+            self.session.commitConfiguration()
+            self.session.startRunning()
         }
-        
-        // Add Movie Output
-        if session.canAddOutput(movieOutput) {
-            session.addOutput(movieOutput)
-        }
-        
-        // Add Video Data Output (for analysis)
-        if session.canAddOutput(videoOutput) {
-            session.addOutput(videoOutput)
-        }
-        
-        session.commitConfiguration()
-        
-        // Already on background thread
-        self.session.startRunning()
     }
     
     func startRecording() {
