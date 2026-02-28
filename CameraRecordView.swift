@@ -35,19 +35,11 @@ struct CameraRecordView: View {
                             Color.black.opacity(cameraManager.isRecording ? 0.0 : 0.2)
                         )
                 } else {
-                    VStack {
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 50))
-                            .foregroundStyle(.gray)
-                            .padding()
-                        Text(languageManager.t("Camera access required"))
-                            .font(.headline)
-                            .foregroundStyle(.gray)
-                        Button(languageManager.t("Open Settings")) {
-                            // Link to settings would go here
-                        }
-                        .padding()
-                    }
+                    PermissionDeniedView(
+                        icon: "camera.fill",
+                        title: "Camera access required",
+                        description: "Allow camera access in settings to start recording your presence."
+                    )
                 }
                 
                 if let cameraManager = cameraManager, !cameraManager.isRecording {

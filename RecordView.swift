@@ -116,6 +116,21 @@ struct RecordView: View {
             .onAppear {
                 voiceRecorder.requestPermission()
             }
+            .overlay {
+                if !voiceRecorder.microphonePermissionGranted {
+                    PermissionDeniedView(
+                        icon: "mic.fill",
+                        title: "Microphone access required",
+                        description: "Allow microphone access in settings to start recording your voice."
+                    )
+                } else if !voiceRecorder.speechPermissionGranted {
+                    PermissionDeniedView(
+                        icon: "waveform.path",
+                        title: "Speech Recognition required",
+                        description: "Echo uses speech recognition to analyze your clarity and pace. Please enable it in settings."
+                    )
+                }
+            }
         }
         .background(Theme.background)
     }

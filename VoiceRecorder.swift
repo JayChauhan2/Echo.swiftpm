@@ -15,21 +15,45 @@ class VoiceRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, AVAudi
     @Published var currentAmplitude: Float = 0.0
     @Published var currentTime: TimeInterval = 0
     @Published var duration: TimeInterval = 0
+    @Published var microphonePermissionGranted = true
+    @Published var speechPermissionGranted = true
     
     private var currentRecordingFilename: String?
     private var recordingStartTime: Date?
     
     override init() {
         super.init()
+        // Initial permission check
+        checkPermissions()
+    }
+    
+    func checkPermissions() {
+        let session = AVAudioSession.sharedInstance()
+        let micStatus = session.recordPermission
+        
+        DispatchQueue.main.async {
+            self.microphonePermissionGranted = (micStatus == .granted)
+        }
+        
+        let speechStatus = SFSpeechRecognizer.authorizationStatus()
+        DispatchQueue.main.async {
+            self.speechPermissionGranted = (speechStatus == .authorized)
+        }
     }
     
     func requestPermission() {
-        AVAudioSession.sharedInstance().requestRecordPermission { allowed in
+        AVAudioSession.sharedInstance().requestRecordPermission { [weak self] allowed in
             print("Microphone permission allowed: \(allowed)")
+            DispatchQueue.main.async {
+                self?.microphonePermissionGranted = allowed
+            }
         }
         
-        SFSpeechRecognizer.requestAuthorization { status in
+        SFSpeechRecognizer.requestAuthorization { [weak self] status in
             print("Speech recognition status: \(status.rawValue)")
+            DispatchQueue.main.async {
+                self?.speechPermissionGranted = (status == .authorized)
+            }
         }
     }
     

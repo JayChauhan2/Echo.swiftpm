@@ -21,32 +21,34 @@ class CameraManager: NSObject, ObservableObject {
     }
     
     func checkPermission() {
-        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        switch status {
         case .authorized:
-            // Normalize behavior: always dispatch to background for setup
+            DispatchQueue.main.async {
+                self.permissionGranted = true
+            }
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                DispatchQueue.main.async {
-                    self?.permissionGranted = true
-                }
                 self?.setupSession()
             }
         case .notDetermined:
             AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                DispatchQueue.main.async {
+                    self?.permissionGranted = granted
+                }
                 if granted {
-                    DispatchQueue.main.async {
-                        self?.permissionGranted = true
-                    }
                     DispatchQueue.global(qos: .userInitiated).async {
                         self?.setupSession()
                     }
-                } else {
-                    DispatchQueue.main.async {
-                        self?.permissionGranted = false
-                    }
                 }
             }
-        default:
-            permissionGranted = false
+        case .denied, .restricted:
+            DispatchQueue.main.async {
+                self.permissionGranted = false
+            }
+        @unknown default:
+            DispatchQueue.main.async {
+                self.permissionGranted = false
+            }
         }
     }
     
