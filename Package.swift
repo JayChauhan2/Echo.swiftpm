@@ -33,10 +33,11 @@ let package = Package(
                 .portraitUpsideDown(.when(deviceFamilies: [.pad]))
             ],
             capabilities: [
-                .microphone(purposeString: "We need access to your microphone to record audio."),
-                .speechRecognition(purposeString: "We will analyze your voice to provide accurate results"),
+                .microphone(purposeString: "Echo needs access to your microphone to record audio."),
+                .speechRecognition(purposeString: "Echo analyzes your voice to provide accurate results."),
                 .camera(purposeString: "Echo uses the camera to help you analyze your non-verbal communication like posture and gaze.")
-            ]
+            ],
+            appCategory: .education
         )
     ],
     targets: [

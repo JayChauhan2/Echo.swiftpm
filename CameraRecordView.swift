@@ -34,12 +34,12 @@ struct CameraRecordView: View {
                         .overlay(
                             Color.black.opacity(cameraManager.isRecording ? 0.0 : 0.2)
                         )
-                } else {
-                    PermissionDeniedView(
-                        icon: "camera.fill",
-                        title: "Camera access required",
-                        description: "Allow camera access in settings to start recording your presence."
-                    )
+                } else if let cameraManager = cameraManager, cameraManager.permissionGranted {
+                    CameraPreview(session: cameraManager.session)
+                        .ignoresSafeArea()
+                        .overlay(
+                            Color.black.opacity(cameraManager.isRecording ? 0.0 : 0.2)
+                        )
                 }
                 
                 if let cameraManager = cameraManager, !cameraManager.isRecording {
@@ -169,6 +169,15 @@ struct CameraRecordView: View {
                 // Stop session when view disappears to save resources (on background thread)
                 DispatchQueue.global(qos: .userInitiated).async { [weak cameraManager] in
                     cameraManager?.session.stopRunning()
+                }
+            }
+            .overlay {
+                if let cameraManager = cameraManager, !cameraManager.permissionGranted, !isInitializing {
+                    PermissionDeniedView(
+                        icon: "camera.fill",
+                        title: "Camera access required",
+                        description: "Allow camera access in settings to start recording your presence."
+                    )
                 }
             }
         }
