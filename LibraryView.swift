@@ -53,7 +53,7 @@ struct LibraryView: View {
                             .padding(.top, 100)
                         } else {
                             LazyVGrid(columns: [
-                                GridItem(.adaptive(minimum: horizontalSizeClass == .regular ? 180 : 120), spacing: 20)
+                                GridItem(.adaptive(minimum: horizontalSizeClass == .regular ? 180 : 100), spacing: 20)
                             ], spacing: 20) {
                                 ForEach(Array(storage.recordings.enumerated()), id: \.element.id) { index, recording in
                                     Button(action: {

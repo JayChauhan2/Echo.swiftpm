@@ -17,7 +17,7 @@ struct ProgressView: View {
                 LazyVGrid(columns: [
                     GridItem(.flexible(), spacing: 16),
                     GridItem(.flexible(), spacing: 16)
-                ].prefix(horizontalSizeClass == .regular ? 2 : 1).map { $0 }, spacing: 16) {
+                ], spacing: 16) {
                     // Practice Goal
                     PracticeGoalBox(minutes: viewModel.practiceMinutesToday, goal: viewModel.practiceGoalMinutes)
                         .frame(minHeight: 180)
@@ -29,7 +29,7 @@ struct ProgressView: View {
                     // Confidence Chart (Full Width Span)
                     ConfidenceChartBox(trend: viewModel.confidenceTrend)
                         .frame(minHeight: 220)
-                        .gridCellColumns(horizontalSizeClass == .regular ? 2 : 1)
+                        .gridCellColumns(2)
                     
                     // Clarity
                     ClarityBox(score: viewModel.clarityScore, status: viewModel.clarityStatus)
