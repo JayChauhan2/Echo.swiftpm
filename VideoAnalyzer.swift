@@ -40,6 +40,10 @@ class VideoAnalyzer: NSObject, ObservableObject {
     
     // State buffer for smoothing UI
     private var recentPresenceStates: [PresenceState] = []
+    private var lastFrameTime: TimeInterval = 0
+    
+    // Thread safety
+    private let analysisQueue = DispatchQueue(label: "com.echo.videoAnalysis", qos: .userInteractive)
     
     override init() {
         super.init()
@@ -47,9 +51,12 @@ class VideoAnalyzer: NSObject, ObservableObject {
     }
     
     private func setupVision() {
-        faceLandmarksRequest = VNDetectFaceLandmarksRequest { [weak self] request, error in
+        let request = VNDetectFaceLandmarksRequest { [weak self] request, error in
             self?.handleFaceLandmarks(request: request, error: error)
         }
+        // Revision 3 is more accurate for lip landmarks
+        request.revision = VNDetectFaceLandmarksRequestRevision3
+        faceLandmarksRequest = request
     }
     
     func startAnalysis() {
@@ -80,189 +87,202 @@ class VideoAnalyzer: NSObject, ObservableObject {
     }
     
     func stopAnalysis() -> VideoAnalysisResult {
-        let duration = Date().timeIntervalSince(recordingStartTime ?? Date())
-        
-        // 1. Process Movement
-        let avgVelocity = movementVelocities.isEmpty ? 0 : movementVelocities.reduce(0, +) / Double(movementVelocities.count)
-        let stillness = max(0, 1.0 - (avgVelocity * 5.0)) // Heuristic scaling
-        let movementMetrics = HeadMovementMetrics(
-            averageVelocity: avgVelocity,
-            stillnessScore: stillness,
-            fidgetIntervals: fidgetSpikes
-        )
-        
-        // 2. Process Gaze
-        let totalTime = max(duration, 1.0)
-        let engagement = Double(gazeContactFrames) / 30.0 / totalTime // Assuming ~30fps processing
-        let gazeMetrics = GazeMetrics(
-            eyeContactDuration: Double(gazeContactFrames) / 30.0,
-            engagementRatio: min(engagement, 1.0),
-            longestStreak: maxGazeStreak
-        )
-        
-        // 3. Process Expression
-        let energy = expressionVariances.isEmpty ? 0 : expressionVariances.reduce(0, +) / Double(expressionVariances.count)
-        let expressionMetrics = ExpressionMetrics(
-            energyScore: energy * 1000, // Scale up small variance
-            smileCount: smileTimestamps.count,
-            smileTimestamps: smileTimestamps
-        )
-        
-        // 4. Process Framing
-        let avgRatio = faceRatios.isEmpty ? 0 : faceRatios.reduce(0, +) / Double(faceRatios.count)
-        let avgDeviation = centerDeviations.isEmpty ? 0 : centerDeviations.reduce(0, +) / Double(centerDeviations.count)
-        let framingHit = FramingMetrics(
-            averageFaceRatio: avgRatio,
-            isCenteredScore: max(0, 1.0 - avgDeviation),
-            postureIssueDetected: postureIssueFrames > 30 // > 1 second accumulated
-        )
-        
-        // Final Score
-        // Weighted average of components
-        let score = (stillness + (gazeMetrics.engagementRatio) + (framingHit.isCenteredScore)) / 3.0
+        return analysisQueue.sync {
+            let duration = Date().timeIntervalSince(recordingStartTime ?? Date())
+            
+            // 1. Process Movement
+            let avgVelocity = movementVelocities.isEmpty ? 0 : movementVelocities.reduce(0, +) / Double(movementVelocities.count)
+            let stillness = max(0, 1.0 - (avgVelocity * 5.0)) // Heuristic scaling
+            let movementMetrics = HeadMovementMetrics(
+                averageVelocity: avgVelocity,
+                stillnessScore: stillness,
+                fidgetIntervals: fidgetSpikes
+            )
+            
+            // 2. Process Gaze
+            let totalTime = max(duration, 1.0)
+            let engagement = totalFaceFrames > 0 ? Double(gazeContactFrames) / Double(totalFaceFrames) : 0
+            let gazeMetrics = GazeMetrics(
+                eyeContactDuration: totalTime * engagement,
+                engagementRatio: engagement,
+                longestStreak: maxGazeStreak
+            )
+            
+            // 3. Process Expression
+            let energy = expressionVariances.isEmpty ? 0 : expressionVariances.reduce(0, +) / Double(expressionVariances.count)
+            let expressionMetrics = ExpressionMetrics(
+                energyScore: energy * 1000, // Scale up small variance
+                smileCount: smileTimestamps.count,
+                smileTimestamps: smileTimestamps
+            )
+            
+            // 4. Process Framing
+            let avgRatio = faceRatios.isEmpty ? 0 : faceRatios.reduce(0, +) / Double(faceRatios.count)
+            let avgDeviation = centerDeviations.isEmpty ? 0 : centerDeviations.reduce(0, +) / Double(centerDeviations.count)
+            let framingHit = FramingMetrics(
+                averageFaceRatio: avgRatio,
+                isCenteredScore: max(0, 1.0 - avgDeviation),
+                postureIssueDetected: postureIssueFrames > 30 // > 1 second accumulated
+            )
+            
+            // Final Score
+            let score = (stillness + (gazeMetrics.engagementRatio) + (framingHit.isCenteredScore)) / 3.0
 
-        if events.isEmpty {
-            addEvent(timestamp: 0.0, type: .present, desc: "Session recorded")
+            if events.isEmpty {
+                addEvent(timestamp: 0.0, type: .present, desc: "Session recorded")
+            }
+            
+            return VideoAnalysisResult(
+                events: events,
+                presenceScore: score,
+                movement: movementMetrics,
+                gaze: gazeMetrics,
+                expression: expressionMetrics,
+                framing: framingHit
+            )
         }
-        
-        return VideoAnalysisResult(
-            events: events,
-            presenceScore: score,
-            movement: movementMetrics,
-            gaze: gazeMetrics,
-            expression: expressionMetrics,
-            framing: framingHit
-        )
     }
     
     private func handleFaceLandmarks(request: VNRequest, error: Error?) {
-        guard let startTime = recordingStartTime else { return }
-        let now = Date().timeIntervalSince(startTime)
+        let startTime = recordingStartTime
+        let now = startTime.map { Date().timeIntervalSince($0) } ?? 0
         
         guard let results = request.results as? [VNFaceObservation], let face = results.first else {
-            consecutiveNoFaceFrames += 1
-            consecutiveFaceFrames = 0
-            // Only mark absent after ~0.3s without a face (~9 frames at 30fps)
-            if consecutiveNoFaceFrames > 9 {
-                DispatchQueue.main.async { self.currentPresence = .absent }
-                lastUiState = .absent
+            analysisQueue.async {
+                self.consecutiveNoFaceFrames += 1
+                self.consecutiveFaceFrames = 0
+                // Only mark absent after ~0.3s without a face (~9 frames at 30fps)
+                if self.consecutiveNoFaceFrames > 9 {
+                    DispatchQueue.main.async { self.currentPresence = .absent }
+                    self.lastUiState = .absent
+                }
             }
             return
         }
         
-        consecutiveFaceFrames += 1
-        consecutiveNoFaceFrames = 0
-        if consecutiveFaceFrames >= 2 && lastUiState == .absent { // require 2 frames to flip back
-            addEvent(timestamp: now, type: .present, desc: "Face detected")
-            DispatchQueue.main.async { self.currentPresence = .present }
-            lastUiState = .present
-        }
-        
-        totalFaceFrames += 1
-        
-        // --- 1. Movement Analysis (Normalized) ---
-        let currentCenter = CGPoint(x: face.boundingBox.midX, y: face.boundingBox.midY)
-        if let prev = previousFaceCenter {
-            let dx = currentCenter.x - prev.x
-            let dy = currentCenter.y - prev.y
-            let rawDist = sqrt(dx*dx + dy*dy)
+        analysisQueue.async {
+            self.consecutiveFaceFrames += 1
+            self.consecutiveNoFaceFrames = 0
+            if self.consecutiveFaceFrames >= 2 && self.lastUiState == .absent {
+                if let startTime = startTime {
+                    self.addEvent(timestamp: now, type: .present, desc: "Face detected")
+                }
+                DispatchQueue.main.async { self.currentPresence = .present }
+                self.lastUiState = .present
+            }
             
-            // Normalize distance based on face size
-            // Larger face (closer) = more movement pixels for same action
-            // divide by face width to get "relative movement"
-            // Face width is usually 0.2 - 0.5 of screen
-            let faceWidth = face.boundingBox.width
-            let normalizedDist = rawDist / max(faceWidth, 0.1) // Avoid div by zero
+            if startTime != nil {
+                self.totalFaceFrames += 1
+            }
             
-            movementVelocities.append(normalizedDist)
-            
-            // Fidget Detection (Relative Threshold)
-            // 0.04 normalized distance is significant relative to face size
-            if normalizedDist > 0.04 {
-                // Debounce events
-                if fidgetSpikes.last.map({ now - $0 > 0.8 }) ?? true {
-                    fidgetSpikes.append(now)
-                    addEvent(timestamp: now, type: .fidgeting, desc: "High movement detected")
+            // --- 1. Movement Analysis (Normalized) ---
+            let currentCenter = CGPoint(x: face.boundingBox.midX, y: face.boundingBox.midY)
+            if let prev = self.previousFaceCenter, startTime != nil {
+                let dx = currentCenter.x - prev.x
+                let dy = currentCenter.y - prev.y
+                let rawDist = sqrt(dx*dx + dy*dy)
+                let faceWidth = face.boundingBox.width
+                let normalizedDist = rawDist / max(faceWidth, 0.1)
+                
+                self.movementVelocities.append(normalizedDist)
+                
+                if normalizedDist > 0.04 {
+                    if self.fidgetSpikes.last.map({ now - $0 > 0.8 }) ?? true {
+                        self.fidgetSpikes.append(now)
+                        self.addEvent(timestamp: now, type: .fidgeting, desc: "High movement detected")
+                    }
                 }
             }
-        }
-        previousFaceCenter = currentCenter
-        
-        // --- 2. Gaze Analysis ---
-        // Simple heuristic: Face yaw close to 0 OR eyes present
-        var isLookingAtCamera = false
-        if let yaw = face.yaw {
-            if abs(yaw.doubleValue) < 0.35 { // changed from 0.2 to 0.35 for more tolerance
+            if startTime != nil {
+                self.previousFaceCenter = currentCenter
+            }
+            
+            // --- 2. Gaze Analysis ---
+            var isLookingAtCamera = false
+            if let yaw = face.yaw {
+                if abs(yaw.doubleValue) < 0.35 {
+                    isLookingAtCamera = true
+                }
+            } else {
                 isLookingAtCamera = true
             }
-        } else {
-            // Fallback if no yaw: Assume looking if face is detected (rough)
-            isLookingAtCamera = true
-        }
-        
-        recentPresenceStates.append(isLookingAtCamera ? .present : .distracted)
-        if recentPresenceStates.count > 10 { recentPresenceStates.removeFirst() }
-        
-        if isLookingAtCamera {
-            gazeContactFrames += 1
-            currentGazeStreak += (1.0 / 30.0) // Assume ~30fps
-        } else {
-            if currentGazeStreak > 0 {
-                maxGazeStreak = max(maxGazeStreak, currentGazeStreak)
-                currentGazeStreak = 0
+            
+            self.recentPresenceStates.append(isLookingAtCamera ? .present : .distracted)
+            if self.recentPresenceStates.count > 10 { self.recentPresenceStates.removeFirst() }
+            
+            if isLookingAtCamera && startTime != nil {
+                self.gazeContactFrames += 1
+                if self.lastFrameTime > 0 {
+                    let delta = now - self.lastFrameTime
+                    self.currentGazeStreak += delta
+                }
+            } else if startTime != nil {
+                if self.currentGazeStreak > 0 {
+                    self.maxGazeStreak = max(self.maxGazeStreak, self.currentGazeStreak)
+                    self.currentGazeStreak = 0
+                }
             }
-        }
-        
-        // --- 3. Expression Analysis ---
-        if let landmarks = face.landmarks {
-            // Smile Detection
-            // Check outer lips vs face width
-            if let outerLips = landmarks.outerLips {
-                // Calculate bounding box of lips
-                let pts = outerLips.normalizedPoints
-                if let minX = pts.map({ $0.x }).min(), let maxX = pts.map({ $0.x }).max(),
-                   let minY = pts.map({ $0.y }).min(), let maxY = pts.map({ $0.y }).max() {
-                    
-                    let width = maxX - minX
-                    let height = maxY - minY
-                    let ratio = width / height
-                    
-                    // Wide mouth relative to height usually indicates smile
-                    if ratio > 2.0 { // Reduced from 2.2 to 2.0 for higher sensitivity
-                         if now - lastSmileTime > 1.5 { // Reduced from 2.0 to 1.5
-                             smileTimestamps.append(now)
-                             lastSmileTime = now
-                             addEvent(timestamp: now, type: .smiling, desc: "Smile detected")
-                         }
+            self.lastFrameTime = now
+            
+            // --- 3. Expression Analysis ---
+            if let landmarks = face.landmarks {
+                if let outerLips = landmarks.outerLips {
+                    let pts = outerLips.normalizedPoints
+                    if pts.count >= 2 {
+                        // Find corners and vertical extremas
+                        let leftCorner = pts.min(by: { $0.x < $1.x })!
+                        let rightCorner = pts.max(by: { $0.x < $1.x })!
+                        let bottomCenter = pts.min(by: { $0.y < $1.y })!
+                        let topCenter = pts.max(by: { $0.y < $1.y })!
+                        
+                        let mouthWidth = rightCorner.x - leftCorner.x
+                        let mouthHeight = topCenter.y - bottomCenter.y
+                        let aspect = mouthWidth / max(mouthHeight, 0.01)
+                        
+                        // Curvature: Average corner height relative to the bottom center
+                        let avgCornerY = (leftCorner.y + rightCorner.y) / 2.0
+                        let curvature = avgCornerY - bottomCenter.y
+                        
+                        // Score calculation:
+                        // A smile typically has a high aspect ratio (wide) AND positive curvature (upward corners)
+                        // Using a curvature-dominant scoring for better accuracy:
+                        let smileScore = (aspect - 2.2) + (curvature * 20.0) 
+                        
+                        self.expressionVariances.append(min(max(smileScore / 2.0, 0.0), 1.0))
+                        
+                        // Detect a distinct smile event
+                        // 0.5 is a robust threshold for a clear smile
+                        if smileScore > 0.5 { 
+                            if startTime != nil && now - self.lastSmileTime > 1.0 {
+                                self.smileTimestamps.append(now)
+                                self.lastSmileTime = now
+                                self.addEvent(timestamp: now, type: .smiling, desc: "Smile detected")
+                            }
+                        }
                     }
                 }
             }
             
-            // Energy/Variance (Eyebrow movement)
-             // Simple proxy: just track if eyebrows are high?
-             // For now, let's use the movement velocity as a proxy for "Energy" well enough
-             // Actual expression variance is complex to calculate without baseline neutral face
-        }
-        
-        // --- 4. Framing Analysis ---
-        let faceArea = face.boundingBox.width * face.boundingBox.height
-        faceRatios.append(faceArea)
-        
-        let devX = abs(face.boundingBox.midX - 0.5)
-        let devY = abs(face.boundingBox.midY - 0.5)
-        centerDeviations.append(devX + devY)
-        
-        // UI State Update
-        var uiState: PresenceState = .grounded
-        if !isLookingAtCamera { uiState = .distracted }
-        else if (movementVelocities.last ?? 0) > 0.04 { uiState = .fidgeting }
-        else { uiState = .grounded }
+            // --- 4. Framing Analysis ---
+            if startTime != nil {
+                let faceArea = face.boundingBox.width * face.boundingBox.height
+                self.faceRatios.append(faceArea)
+                let devX = abs(face.boundingBox.midX - 0.5)
+                let devY = abs(face.boundingBox.midY - 0.5)
+                self.centerDeviations.append(devX + devY)
+            }
+            
+            // UI State Update
+            var uiState: PresenceState = .grounded
+            if !isLookingAtCamera { uiState = .distracted }
+            else if (self.movementVelocities.last ?? 0) > 0.04 { uiState = .fidgeting }
+            else { uiState = .grounded }
 
-        // Do not set to .absent here because we have a face; only the no-face branch can set Absent
-        if uiState != lastUiState {
-            lastUiState = uiState
-            DispatchQueue.main.async {
-                self.currentPresence = uiState
+            if uiState != self.lastUiState {
+                self.lastUiState = uiState
+                DispatchQueue.main.async {
+                    self.currentPresence = uiState
+                }
             }
         }
     }
@@ -279,7 +299,17 @@ extension VideoAnalyzer: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         
-        let orientation: CGImagePropertyOrientation = .leftMirrored
+        // Dynamic orientation handling
+        // Front camera is mirrored by default in this app's CameraManager
+        let orientation: CGImagePropertyOrientation
+        switch connection.videoOrientation {
+        case .portrait: orientation = .leftMirrored
+        case .portraitUpsideDown: orientation = .rightMirrored
+        case .landscapeLeft: orientation = .downMirrored
+        case .landscapeRight: orientation = .upMirrored
+        @unknown default: orientation = .leftMirrored
+        }
+        
         let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: orientation, options: [:])
         
         do {
