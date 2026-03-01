@@ -20,6 +20,7 @@ struct ContentView: View {
 
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @State private var selectedTab: Tab? = .voice
+    @State private var isSplashScreenActive = true
 
     enum Tab: String, CaseIterable, Identifiable {
         case voice, camera, library, progress, settings
@@ -47,50 +48,66 @@ struct ContentView: View {
     }
 
     var body: some View {
-        Group {
-            if horizontalSizeClass == .regular {
-                NavigationSplitView {
-                    List(selection: $selectedTab) {
-                        ForEach(Tab.allCases) { tab in
-                            NavigationLink(value: tab) {
-                                Label(languageManager.t(tab.label), systemImage: tab.icon)
+        ZStack {
+            Group {
+                if horizontalSizeClass == .regular {
+                    NavigationSplitView {
+                        List(selection: $selectedTab) {
+                            ForEach(Tab.allCases) { tab in
+                                NavigationLink(value: tab) {
+                                    Label(languageManager.t(tab.label), systemImage: tab.icon)
+                                }
                             }
                         }
+                        .navigationTitle("Echo")
+                    } detail: {
+                        detailView(for: selectedTab ?? .voice)
                     }
-                    .navigationTitle("Echo")
-                } detail: {
-                    detailView(for: selectedTab ?? .voice)
-                }
-            } else {
-                TabView(selection: Binding(
-                    get: { selectedTab ?? .voice },
-                    set: { selectedTab = $0 }
-                )) {
-                    ForEach(Tab.allCases) { tab in
-                        detailView(for: tab)
-                            .tabItem {
-                                Label(languageManager.t(tab.label), systemImage: tab.icon)
-                            }
-                            .tag(tab)
+                } else {
+                    TabView(selection: Binding(
+                        get: { selectedTab ?? .voice },
+                        set: { selectedTab = $0 }
+                    )) {
+                        ForEach(Tab.allCases) { tab in
+                            detailView(for: tab)
+                                .tabItem {
+                                    Label(languageManager.t(tab.label), systemImage: tab.icon)
+                                }
+                                .tag(tab)
+                        }
                     }
+                    .accentColor(Theme.brandPrimary)
                 }
-                .accentColor(Theme.brandPrimary)
+            }
+            .environmentObject(effectsState)
+            .environmentObject(languageManager)
+            .environmentObject(appearanceManager)
+            .environmentObject(onboardingManager)
+            .environmentObject(storage)
+            .preferredColorScheme(appearanceManager.colorScheme)
+            .fullScreenCover(isPresented: $onboardingManager.shouldShowOnboarding) {
+                OnboardingView(storage: storage)
+                    .environmentObject(onboardingManager)
+                    .environmentObject(storage)
+                    .environmentObject(languageManager)
+            }
+            .onAppear {
+                onboardingManager.showOnboarding()
+            }
+            .opacity(isSplashScreenActive ? 0 : 1)
+            
+            if isSplashScreenActive {
+                LaunchScreenView()
+                    .transition(.opacity)
+                    .zIndex(1)
             }
         }
-        .environmentObject(effectsState)
-        .environmentObject(languageManager)
-        .environmentObject(appearanceManager)
-        .environmentObject(onboardingManager)
-        .environmentObject(storage)
-        .preferredColorScheme(appearanceManager.colorScheme)
-        .fullScreenCover(isPresented: $onboardingManager.shouldShowOnboarding) {
-            OnboardingView(storage: storage)
-                .environmentObject(onboardingManager)
-                .environmentObject(storage)
-                .environmentObject(languageManager)
-        }
         .onAppear {
-            onboardingManager.showOnboarding()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+                withAnimation(.easeInOut(duration: 0.6)) {
+                    isSplashScreenActive = false
+                }
+            }
         }
     }
 
